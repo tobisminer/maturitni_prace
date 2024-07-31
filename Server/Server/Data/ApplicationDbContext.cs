@@ -9,6 +9,6 @@ namespace Server.Data
         {
 
         }
-        public DbSet<Room> Rooms { get; set; }
+        public DbSet<Room?> Rooms { get; set; }
     }
 }
