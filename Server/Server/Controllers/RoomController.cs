@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Models;
 
@@ -13,9 +14,16 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<List<RoomDTO>> List()
         {
-            var rooms = db.Rooms.ToList().Select(room => new RoomDTO { id = room.id, created_at = room.created_at }).ToList();
+            var rooms = db.Rooms.ToList().Select(room => new RoomDTO { id = room.id, created_at = room.created_at, is_full = room.is_full }).ToList();
 
             return Ok(rooms);
+        }
+
+        [HttpGet("listDangerous")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<List<Room>> ListDangerous()
+        {
+            return Ok(db.Rooms.Include(room => room.Messages).ToList());
         }
 
         [HttpDelete("delete/{id:int}")]
@@ -42,10 +50,7 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<RoomDTO> Create()
         {
-            var room = new Room
-            {
-                created_at = DateTime.Now
-            };
+            var room = new Room();
             db.Rooms.Add(room);
             db.SaveChanges();
 
@@ -72,7 +77,7 @@ namespace Server.Controllers
             {
                 return BadRequest("Room is full");
             }
-            
+
             var stringIdentification = RandomGenerator.generateRandomString();
 
             if (room.key_person_1 == null)
@@ -87,6 +92,46 @@ namespace Server.Controllers
             db.SaveChanges();
             return Ok(stringIdentification);
         }
+
+        [HttpPost("sendMessage/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<string> Message(int id, [FromBody] string message, [FromHeader] string identification)
+        {
+            if (id < 0)
+            {
+                return BadRequest("Invalid ID");
+            }
+            if (db.Rooms.Find(id) == null)
+            {
+                return NotFound("Not Found");
+            }
+
+            var room = db.Rooms.Find(id)!;
+            if (room.key_person_1 == null || room.key_person_2 == null)
+            {
+                return BadRequest("Room is not full");
+            }
+
+            if (identification != room.key_person_1 && identification != room.key_person_2)
+            {
+                return Unauthorized("Invalid Identification");
+            }
+
+            room.Messages.Add(new Message
+            {
+                message = message,
+                sender = identification,
+                send_at = DateTime.Now
+            });
+
+            //https://stackoverflow.com/questions/69398019/how-to-store-list-in-sql-server-from-asp-net-core
+            db.SaveChanges();
+            return Ok("Message sent");
+        }
+
 
     }
 

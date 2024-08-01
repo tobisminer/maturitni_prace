@@ -5,11 +5,18 @@ namespace Server.Models
 {
     public class Room
     {
+        public Room()
+        {
+            Messages = new List<Message>();
+            created_at = DateTime.Now;
+            is_full = false;
+        }
+
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int id { get; set; }
 
-        public List<Message>? message_log { get; set; }
+        public ICollection<Message> Messages { get; set; }
 
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
@@ -25,7 +32,7 @@ namespace Server.Models
     {
         public int id { get; set; }
 
-        public List<MessageDTO>? message_log { get; set; }
+        public ICollection<Message> Messages { get; set; }
 
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
@@ -42,6 +49,8 @@ namespace Server.Models
         public int id { get; set; }
         public string? sender { get; set; }
         public string? message { get; set; }
+        public DateTime send_at { get; set; }
+
     }
 
     public class MessageDTO
@@ -49,6 +58,9 @@ namespace Server.Models
         public int id { get; set; }
         public string? sender { get; set; }
         public string? message { get; set; }
+        public DateTime send_at { get; set; }
+        public int RoomId { get; set; }
+        public Room Room { get; set;}
     }
 
 }
