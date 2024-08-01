@@ -399,3 +399,5 @@ FodyWeavers.xsd
 
 # Custom
 *.db
+Server/Server/database.db-shm
+Server/Server/database.db-wal
