@@ -127,9 +127,38 @@ namespace Server.Controllers
                 send_at = DateTime.Now
             });
 
-            //https://stackoverflow.com/questions/69398019/how-to-store-list-in-sql-server-from-asp-net-core
             db.SaveChanges();
             return Ok("Message sent");
+        }
+
+        [HttpGet("getMessages/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<List<Message>> GetMessages(int id, [FromHeader] string identification)
+        {
+            if (id < 0)
+            {
+                return BadRequest("Invalid ID");
+            }
+            if (db.Rooms.Find(id) == null)
+            {
+                return NotFound("Not Found");
+            }
+            
+            var room = db.Rooms.Include(room => room.Messages).FirstOrDefault(room => room.id == id);
+            if (room.key_person_1 == null || room.key_person_2 == null)
+            {
+                return BadRequest("Room is not full");
+            }
+
+            if (identification != room.key_person_1 && identification != room.key_person_2)
+            {
+                return Unauthorized("Invalid Identification");
+            }
+
+            return Ok(room.Messages);
         }
 
 
