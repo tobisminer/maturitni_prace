@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClientMaui.MainPage"
+             Width="500"
+             Height="800"
+             >
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+            <Label
+                Text="Connect to server"
+                Style="{StaticResource Headline}"
+                SemanticProperties.HeadingLevel="Level1" />
+
+            <Grid HorizontalOptions="Fill" VerticalOptions="Start">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="6*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <Entry x:Name="IPadressEntry" Grid.Column="0" Margin="0, 0, 20, 0 " Placeholder="IP adress"></Entry>
+                <Entry x:Name="PortEntry" Grid.Column="1" Placeholder="Port" ></Entry>
+            </Grid>
+            <Button x:Name="ConnectButton" Clicked="ConnectButton_OnClicked" Text="Connect to server!"></Button>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
