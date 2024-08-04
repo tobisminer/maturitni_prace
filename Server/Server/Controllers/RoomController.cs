@@ -10,6 +10,14 @@ namespace Server.Controllers
 
     public class RoomController(ApplicationDbContext db) : ControllerBase
     {
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<string> Index()
+        {
+            return Ok();
+        }
+
+
         [HttpGet("list")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<List<RoomDTO>> List()
@@ -131,7 +139,7 @@ namespace Server.Controllers
             return Ok("Message sent");
         }
 
-        [HttpGet("getMessages/{id:int}")]
+        [HttpGet("messageList/{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
