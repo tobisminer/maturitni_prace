@@ -22,7 +22,14 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<List<RoomDTO>> List()
         {
-            var rooms = db.Rooms.ToList().Select(room => new RoomDTO { id = room.id, created_at = room.created_at, is_full = room.is_full }).ToList();
+            var rooms = db.Rooms.ToList().Select(room => new RoomDTO
+            {
+                id = room.id,
+                created_at = room.created_at,
+                is_full = room.is_full,
+                key_person_1 = room.key_person_1 != null ? "Full" : null,
+                key_person_2 = room.key_person_2 != null ? "Full" : null
+            }).ToList();
 
             return Ok(rooms);
         }
@@ -154,7 +161,7 @@ namespace Server.Controllers
             {
                 return NotFound("Not Found");
             }
-            
+
             var room = db.Rooms.Include(room => room.Messages).FirstOrDefault(room => room.id == id);
             if (room.key_person_1 == null || room.key_person_2 == null)
             {

@@ -1,11 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
+using Server.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<LoggingFilter>();
+});
+
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))

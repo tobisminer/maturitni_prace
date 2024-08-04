@@ -60,7 +60,7 @@ namespace Server.Models
         public string? message { get; set; }
         public DateTime send_at { get; set; }
         public int RoomId { get; set; }
-        public Room Room { get; set;}
+        public Room Room { get; set; }
     }
 
 }
