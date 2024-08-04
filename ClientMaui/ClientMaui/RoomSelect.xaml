@@ -3,10 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ClientMaui.RoomSelect"
              Title="RoomSelect">
-    <VerticalStackLayout>
+    <StackLayout>
         <Label 
-            Text="Welcome to .NET MAUI!"
+            Text="All the rooms in one place :)"
             VerticalOptions="Center" 
             HorizontalOptions="Center" />
-    </VerticalStackLayout>
+
+       <FlexLayout Wrap="Wrap" Margin="10"  FlowDirection="LeftToRight" x:Name="RoomList"></FlexLayout>
+    </StackLayout>
 </ContentPage>

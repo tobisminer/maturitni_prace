@@ -20,7 +20,7 @@ namespace ClientMaui.API
 
             if (id != 0)
             {
-                request.AddUrlSegment("id", id.ToString());
+                request.Resource += $"/{id}";
             }
 
             if (identification != "")
@@ -36,12 +36,12 @@ namespace ClientMaui.API
     {
         private const string API = "api/";
         private const string ROOM = API + "room/";
-      
-       
+
+
         public struct RoomEndpoints
         {
             public const string Index = ROOM;
-            public const string RoomList = ROOM + "list";
+            public const string RoomList = ROOM + "listDangerous";
             public const string Delete = ROOM + "delete";
             public const string Create = ROOM + "create";
             public const string Connect = ROOM + "connect";
@@ -50,6 +50,6 @@ namespace ClientMaui.API
         }
 
     }
-    
+
 
 }

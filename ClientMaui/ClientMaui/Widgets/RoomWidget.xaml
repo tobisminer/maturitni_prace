@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClientMaui.Widgets.RoomWidget">
+    <Border StrokeThickness="1" StrokeShape="RoundRectangle 10,10,10,10" Margin="10">
+        <Border.Stroke>
+            <LinearGradientBrush EndPoint="0,1">
+                <GradientStop Color="Red"
+                              Offset="0.1" />
+                <GradientStop Color="Green"
+                              Offset="1.0" />
+            </LinearGradientBrush>
+        </Border.Stroke>
+        <VerticalStackLayout Margin="10">
+            <Label 
+                x:Name="RoomHeader"
+                Text="Room #"
+                VerticalOptions="Center" 
+                HorizontalOptions="Center"
+            />
+            <Button x:Name="ConnectButton" x:FieldModifier="public" Text="Connect" HorizontalOptions="Center" Margin="20,20,20,0"></Button>
+        </VerticalStackLayout>
+
+    </Border>
+    
+</ContentView>
