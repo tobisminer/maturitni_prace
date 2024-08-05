@@ -2,10 +2,12 @@
 
 namespace ClientMaui.API
 {
+
+    
     public class Endpoint(string url)
     {
-        private RestClient client = new RestClient(url);
-
+        private RestClient client = new(url);
+        
         public Task<RestResponse> request(
             string endpoint,
             string body = "",
@@ -25,9 +27,14 @@ namespace ClientMaui.API
 
             if (identification != "")
             {
-                request.AddHeader("Authorization", identification);
+                request.AddHeader("Identification", identification);
             }
 
+            if (body != "")
+            {
+                request.AddParameter("application/json", body, ParameterType.RequestBody);
+            }
+           
             return client.ExecuteAsync(request);
         }
     }

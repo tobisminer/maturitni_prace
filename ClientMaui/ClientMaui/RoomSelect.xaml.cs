@@ -29,15 +29,9 @@ public partial class RoomSelect : ContentPage
         {
             //add control to the stacklayout
             var roomWidget = new RoomWidget(room);
-            roomWidget.ConnectButton.Clicked += async (sender, args) =>
+            roomWidget.ConnectButton.Clicked += async (_, _) =>
             {
-                var response = await endpoint.request(APIEndpoints.RoomEndpoints.Connect, method: Method.Post, id: room.id);
-                if (response.StatusCode != HttpStatusCode.OK)
-                {
-                    await DisplayAlert("Error", "Error occured while connecting to room!", "OK");
-                    return;
-                }
-                //await Navigation.PushAsync(new ChatRoom(endpoint, room));
+                await Navigation.PushAsync(new ChatRoom(endpoint, room));
             };
 
             RoomList.Children.Add(roomWidget);
