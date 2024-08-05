@@ -1,14 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Server.Data;
 using Server.Models;
+using Server.SignalR;
 
 namespace Server.Controllers
 {
     [Route("api/room")]
     [ApiController]
 
-    public class RoomController(ApplicationDbContext db) : ControllerBase
+    public class RoomController(ApplicationDbContext db, IHubContext<NewMessageHub> newMessageHub) : ControllerBase
     {
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -75,8 +78,9 @@ namespace Server.Controllers
         [HttpGet("connect/{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> Connect(int id)
+        public ActionResult<string> Connect(int id, [FromHeader] string identification)
         {
             if (id < 0)
             {
@@ -86,6 +90,10 @@ namespace Server.Controllers
             {
                 return NotFound("Not Found");
             }
+            if(identification == "")
+            {
+                return Unauthorized("Invalid Identification");
+            }
 
             var room = db.Rooms.Find(id)!;
             if (room.is_full != null && (bool)room.is_full)
@@ -93,19 +101,18 @@ namespace Server.Controllers
                 return BadRequest("Room is full");
             }
 
-            var stringIdentification = RandomGenerator.generateRandomString();
 
             if (room.key_person_1 == null)
             {
-                room.key_person_1 = stringIdentification;
+                room.key_person_1 = identification;
             }
             else if (room.key_person_2 == null)
             {
-                room.key_person_2 = stringIdentification;
+                room.key_person_2 = identification;
                 room.is_full = true;
             }
             db.SaveChanges();
-            return Ok(stringIdentification);
+            return Ok();
         }
 
         [HttpPost("sendMessage/{id:int}")]
@@ -113,7 +120,7 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> Message(int id, [FromBody] string message, [FromHeader] string identification)
+        public ActionResult<string> Message(int id, [FromBody] Message message, [FromHeader] string identification)
         {
             if (id < 0)
             {
@@ -135,14 +142,23 @@ namespace Server.Controllers
                 return Unauthorized("Invalid Identification");
             }
 
-            room.Messages.Add(new Message
+            var messageObject = new Message
             {
-                message = message,
+                message = message.message,
                 sender = identification,
                 send_at = DateTime.Now
-            });
+            };
+
+            room.Messages.Add(messageObject);
 
             db.SaveChanges();
+
+            //convert messageObject to string variable
+
+            var messageString = JsonConvert.SerializeObject(messageObject);
+
+            newMessageHub.Clients.Client(room.key_person_1).SendAsync("ReceiveMessage", messageString);
+            newMessageHub.Clients.Client(room.key_person_2).SendAsync("ReceiveMessage", messageString);
             return Ok("Message sent");
         }
 

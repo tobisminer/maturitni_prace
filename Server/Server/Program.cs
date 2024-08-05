@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Logging;
+using Server.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,11 +9,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-builder.Services.AddControllersWithViews(options =>
-{
-    options.Filters.Add<LoggingFilter>();
-});
+builder.Services.AddSignalR();
 
+
+// Add logging filter
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddControllersWithViews(options =>
+    {
+        options.Filters.Add<LoggingFilter>();
+    });
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
@@ -36,6 +43,8 @@ using (var scope = app.Services.CreateScope())
 }
 app.UseAuthorization();
 
+app.MapHub<NewMessageHub>("new-message");
 app.MapControllers();
+
 
 app.Run();
