@@ -9,7 +9,7 @@ namespace Server.SignalR
             Console.WriteLine($"Client {Context.ConnectionId} connected");
 
             //Return the connection its ID/Token
-            Clients.Client(Context.ConnectionId).SendAsync("RecieveId", Context.ConnectionId);
+            Clients.Client(Context.ConnectionId).SendAsync("ReceiveId", Context.ConnectionId);
 
             return base.OnConnectedAsync();
         }
