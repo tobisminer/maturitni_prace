@@ -1,9 +1,11 @@
 using System.Net;
 using ClientMaui.API;
 using ClientMaui.Entities.Room;
+using ClientMaui.Widgets;
 using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json;
 using RestSharp;
+
 
 namespace ClientMaui;
 
@@ -11,8 +13,8 @@ public partial class ChatRoom : ContentPage
 {
     private Endpoint endpoint;
 	private Room room;
-	private HubConnection connection;
-    private string token;
+	private HubConnection? connection;
+    private string? token;
     public ChatRoom(Endpoint endpoint, Room room)
 	{
 		InitializeComponent();
@@ -23,15 +25,15 @@ public partial class ChatRoom : ContentPage
     protected override async void OnAppearing()
     {
 		connection = new HubConnectionBuilder()
-            .WithUrl($"http://{Preferences.Default.Get("IPAddress", "")}:5282/new-message",
+            .WithUrl($"{endpoint.url}/new-message",
                 (opts) =>
                 {
-                    opts.HttpMessageHandlerFactory = (message) =>
+                    opts.HttpMessageHandlerFactory = message =>
                     {
                         if (message is HttpClientHandler clientHandler)
                             // always verify the SSL certificate
                             clientHandler.ServerCertificateCustomValidationCallback +=
-                                (sender, certificate, chain, sslPolicyErrors) => { return true; };
+                                (_, _, _, _) => true;
                         return message;
                     };
                 }
@@ -40,17 +42,17 @@ public partial class ChatRoom : ContentPage
                 )
             .Build();
 
-        connection.On<string>("RecieveId", async token => await connectToRoom(token));
+        connection.On<string>("ReceiveId", ConnectToRoom);
 
-		connection.On<string>("ReceiveMessage", (message) =>
+		connection.On<string>("ReceiveMessage", message =>
         {
             var messageObject = JsonConvert.DeserializeObject<Message>(message);
-            this.Dispatcher.Dispatch(() =>
+            Dispatcher.Dispatch(() =>
             {
-                var label = new Label
+                var label = new MessageBubble
                 {
-                    Text = messageObject.message,
-                    HorizontalOptions = messageObject.sender == token ? LayoutOptions.End : LayoutOptions.Start,
+                    MessageText = messageObject.message,
+                    IsIncoming = messageObject.sender != token,
                 };
                 MessagesStack.Children.Add(label);
             });
@@ -60,16 +62,16 @@ public partial class ChatRoom : ContentPage
 
     }
 
-    private async Task connectToRoom(string token)
+    private async void ConnectToRoom(string? roomToken)
     {
-        this.token = token;
-        var response = await endpoint.request(APIEndpoints.RoomEndpoints.Connect, id: room.id, identification: token);
+        token = roomToken;
+        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.Connect, id: room.id, identification: roomToken);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             await DisplayAlert("Error", "Error occured while connecting to server, check IP address and port!", "OK");
             return;
         }
-        var messages = await endpoint.request(APIEndpoints.RoomEndpoints.MessageList, id:room.id, identification: token);
+        var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id:room.id, identification: roomToken);
         if (messages.StatusCode != HttpStatusCode.OK)
         {
            return;
@@ -87,7 +89,7 @@ public partial class ChatRoom : ContentPage
             message = message,
             sender = token
         };
-        var response = await endpoint.request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id, identification: token);
+        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id, identification: token);
 
     }
 }

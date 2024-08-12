@@ -6,14 +6,16 @@ namespace ClientMaui.API
     
     public class Endpoint(string url)
     {
+        public string url = url;
+
         private RestClient client = new(url);
         
-        public Task<RestResponse> request(
+        public Task<RestResponse> Request(
             string endpoint,
             string body = "",
             Method method = Method.Get,
             int id = 0,
-            string identification = "")
+            string? identification = "")
         {
             var request = new RestRequest(endpoint)
             {
@@ -41,19 +43,19 @@ namespace ClientMaui.API
 
     struct APIEndpoints
     {
-        private const string API = "api/";
-        private const string ROOM = API + "room/";
+        private const string Api = "api/";
+        private const string Room = Api + "room/";
 
 
         public struct RoomEndpoints
         {
-            public const string Index = ROOM;
-            public const string RoomList = ROOM + "listDangerous";
-            public const string Delete = ROOM + "delete";
-            public const string Create = ROOM + "create";
-            public const string Connect = ROOM + "connect";
-            public const string SendMessage = ROOM + "sendMessage";
-            public const string MessageList = ROOM + "messageList";
+            public const string Index = Room;
+            public const string RoomList = Room + "listDangerous";
+            public const string Delete = Room + "delete";
+            public const string Create = Room + "create";
+            public const string Connect = Room + "connect";
+            public const string SendMessage = Room + "sendMessage";
+            public const string MessageList = Room + "messageList";
         }
 
     }

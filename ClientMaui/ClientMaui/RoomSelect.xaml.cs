@@ -18,7 +18,7 @@ public partial class RoomSelect : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        var response = await endpoint.request(APIEndpoints.RoomEndpoints.RoomList);
+        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.RoomList);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             await DisplayAlert("Error", "Error occured while connecting to server, check IP address and port!", "OK");

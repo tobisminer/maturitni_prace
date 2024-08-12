@@ -23,8 +23,8 @@ namespace ClientMaui
         {
             Preferences.Default.Set("IPAddress", IPadressEntry.Text);
             Preferences.Default.Set("Port", PortEntry.Text);
-            var endpoint = new Endpoint($"http://{IPadressEntry.Text}:{PortEntry.Text} ");
-            var response = await endpoint.request(RoomEndpoints.Index);
+            var endpoint = new Endpoint($"http://{IPadressEntry.Text}:{PortEntry.Text}");
+            var response = await endpoint.Request(RoomEndpoints.Index);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 await DisplayAlert("Error", "Error occured while connecting to server, check IP address and port!", "OK");
