@@ -80,8 +80,9 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> Connect(int id, [FromHeader] string identification)
+        public ActionResult<string> Connect(int id, [FromHeader] string authentication)
         {
+            authentication = authentication.Replace("Bearer ", "");
             if (id < 0)
             {
                 return BadRequest("Invalid ID");
@@ -90,9 +91,9 @@ namespace Server.Controllers
             {
                 return NotFound("Not Found");
             }
-            if(identification == "")
+            if(authentication == "")
             {
-                return Unauthorized("Invalid Identification");
+                return Unauthorized("Invalid Authentication");
             }
 
             var room = db.Rooms.Find(id)!;
@@ -100,7 +101,11 @@ namespace Server.Controllers
             {
                 return BadRequest("Room is full");
             }
-
+            var identification = db.Tokens.FirstOrDefault(token => token.token == authentication)?.identifier;
+            if (identification == null)
+            {
+                return Unauthorized("Invalid Authentication");
+            }
 
             if (room.key_person_1 == null)
             {

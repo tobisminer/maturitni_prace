@@ -16,5 +16,7 @@ namespace Server.Data
         }
         public DbSet<Room?> Rooms { get; set; }
         public DbSet<Message?> Messages { get; set; }
+        public DbSet<UserLogin?> UserLogins { get; set; }
+        public DbSet<Token> Tokens { get; set; }
     }
 }
