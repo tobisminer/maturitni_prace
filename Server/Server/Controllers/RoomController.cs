@@ -80,9 +80,9 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> Connect(int id, [FromHeader] string authentication)
+        public ActionResult<string> Connect(int id, [FromHeader] string authorization)
         {
-            authentication = authentication.Replace("Bearer ", "");
+            authorization = Authentication.GetTokenFromHeader(authorization);
             if (id < 0)
             {
                 return BadRequest("Invalid ID");
@@ -91,7 +91,7 @@ namespace Server.Controllers
             {
                 return NotFound("Not Found");
             }
-            if(authentication == "")
+            if(authorization == "")
             {
                 return Unauthorized("Invalid Authentication");
             }
@@ -101,7 +101,7 @@ namespace Server.Controllers
             {
                 return BadRequest("Room is full");
             }
-            var identification = db.Tokens.FirstOrDefault(token => token.token == authentication)?.identifier;
+            var identification = Authentication.GetIdentifierFromToken(db, authorization);
             if (identification == null)
             {
                 return Unauthorized("Invalid Authentication");
@@ -125,8 +125,9 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> Message(int id, [FromBody] Message message, [FromHeader] string identification)
+        public ActionResult<string> Message(int id, [FromBody] Message message, [FromHeader] string authorization)
         {
+            authorization = Authentication.GetTokenFromHeader(authorization);
             if (id < 0)
             {
                 return BadRequest("Invalid ID");
@@ -140,6 +141,11 @@ namespace Server.Controllers
             if (room.key_person_1 == null || room.key_person_2 == null)
             {
                 return BadRequest("Room is not full");
+            }
+            var identification = Authentication.GetIdentifierFromToken(db, authorization);
+            if (identification == null)
+            {
+                return Unauthorized("Invalid Authentication");
             }
 
             if (identification != room.key_person_1 && identification != room.key_person_2)
@@ -162,8 +168,10 @@ namespace Server.Controllers
 
             var messageString = JsonConvert.SerializeObject(messageObject);
 
-            newMessageHub.Clients.Client(room.key_person_1).SendAsync("ReceiveMessage", messageString);
-            newMessageHub.Clients.Client(room.key_person_2).SendAsync("ReceiveMessage", messageString);
+            
+
+            newMessageHub.Clients.Client(NewMessageHub.connectionToken[room.key_person_1]).SendAsync("ReceiveMessage", messageString);
+            newMessageHub.Clients.Client(NewMessageHub.connectionToken[room.key_person_2]).SendAsync("ReceiveMessage", messageString);
             return Ok("Message sent");
         }
 

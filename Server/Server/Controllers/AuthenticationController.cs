@@ -72,12 +72,12 @@ namespace Server.Controllers
             return Ok(token);
         }
 
-        [HttpPost("renew")]
+        [HttpGet("renew")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<string> Renew([FromHeader] string authentication)
+        public ActionResult<string> Renew([FromHeader] string authorization)
         {
-            authentication = authentication.Replace("Bearer ", "");
-            var token = db.Tokens.FirstOrDefault(token => token.token == authentication);
+            authorization = authorization.Replace("Bearer ", "");
+            var token = db.Tokens.FirstOrDefault(token => token.token == authorization);
             if (token == null)
             {
                 return BadRequest("Invalid token");
@@ -86,9 +86,7 @@ namespace Server.Controllers
             token.created_at = DateTime.Now;
             db.SaveChanges();
             return Ok(token.token);
+           
         }
-
-
-
     }
 }
