@@ -1,21 +1,20 @@
 ﻿using RestSharp;
+using System.Net;
 
 namespace ClientMaui.API
 {
-
-    
     public class Endpoint(string url)
     {
         public string url = url;
 
-        private RestClient client = new(url);
-        
-        public Task<RestResponse> Request(
+        private RestClient _client = new(url);
+
+
+        public async Task<RestResponse> Request(
             string endpoint,
             string body = "",
             Method method = Method.Get,
-            int id = 0,
-            string? identification = "")
+            int id = 0)
         {
             var request = new RestRequest(endpoint)
             {
@@ -27,17 +26,23 @@ namespace ClientMaui.API
                 request.Resource += $"/{id}";
             }
 
-            if (identification != "")
+            if (Authentication.Token != "")
             {
-                request.AddHeader("Identification", identification);
+                request.AddHeader("Authorization", "Bearer " + Authentication.Token);
             }
 
             if (body != "")
             {
                 request.AddParameter("application/json", body, ParameterType.RequestBody);
             }
-           
-            return client.ExecuteAsync(request);
+            var response = await _client.ExecuteAsync(request);
+            if (response.StatusCode != HttpStatusCode.Unauthorized)
+                return response;
+            await new Authentication(this).RenewToken();
+            response = await _client.ExecuteAsync(request);
+
+
+            return response;
         }
     }
 

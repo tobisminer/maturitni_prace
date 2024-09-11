@@ -1,10 +1,10 @@
-using System.Net;
 using ClientMaui.API;
 using ClientMaui.Entities.Room;
 using ClientMaui.Widgets;
 using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Net;
 
 
 namespace ClientMaui;
@@ -12,19 +12,19 @@ namespace ClientMaui;
 public partial class ChatRoom : ContentPage
 {
     private Endpoint endpoint;
-	private Room room;
-	private HubConnection? connection;
+    private Room room;
+    private HubConnection? connection;
     private string? token;
     public ChatRoom(Endpoint endpoint, Room room)
-	{
-		InitializeComponent();
-		this.endpoint = endpoint;
-		this.room = room;
-	}
+    {
+        InitializeComponent();
+        this.endpoint = endpoint;
+        this.room = room;
+    }
 
     protected override async void OnAppearing()
     {
-		connection = new HubConnectionBuilder()
+        connection = new HubConnectionBuilder()
             .WithUrl($"{endpoint.url}/new-message",
                 (opts) =>
                 {
@@ -36,6 +36,7 @@ public partial class ChatRoom : ContentPage
                                 (_, _, _, _) => true;
                         return message;
                     };
+                    opts.Headers["Authorization"] = $"Bearer {Authentication.Token}";
                 }
 
 
@@ -44,7 +45,7 @@ public partial class ChatRoom : ContentPage
 
         connection.On<string>("ReceiveId", ConnectToRoom);
 
-		connection.On<string>("ReceiveMessage", message =>
+        connection.On<string>("ReceiveMessage", message =>
         {
             var messageObject = JsonConvert.DeserializeObject<Message>(message);
             Dispatcher.Dispatch(() =>
@@ -65,16 +66,17 @@ public partial class ChatRoom : ContentPage
     private async void ConnectToRoom(string? roomToken)
     {
         token = roomToken;
-        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.Connect, id: room.id, identification: roomToken);
+        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.Connect, id: room.id);
+
         if (response.StatusCode != HttpStatusCode.OK)
         {
             await DisplayAlert("Error", "Error occured while connecting to server, check IP address and port!", "OK");
             return;
         }
-        var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id:room.id, identification: roomToken);
+        var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id);
         if (messages.StatusCode != HttpStatusCode.OK)
         {
-           return;
+            return;
         }
         var messageList = JsonConvert.DeserializeObject<List<Message>>(messages.Content);
 
@@ -89,7 +91,7 @@ public partial class ChatRoom : ContentPage
             message = message,
             sender = token
         };
-        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id, identification: token);
+        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id);
 
     }
 }

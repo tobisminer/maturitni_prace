@@ -20,7 +20,7 @@ public partial class RoomWidget : ContentView
         };
         ConnectButton.IsEnabled = personCount < 2;
     }
-    
+
     private int GetNumberOfPerson()
     {
         if (room.is_full) return 2;

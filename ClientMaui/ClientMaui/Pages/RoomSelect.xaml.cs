@@ -2,7 +2,6 @@ using ClientMaui.API;
 using ClientMaui.Entities.Room;
 using ClientMaui.Widgets;
 using Newtonsoft.Json;
-using RestSharp;
 using System.Net;
 
 namespace ClientMaui;
