@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Net;
+using SharpHook;
+using SharpHook.Native;
 
 
 namespace ClientMaui;
@@ -14,20 +16,42 @@ public partial class ChatRoom : ContentPage
     private Endpoint endpoint;
     private Room room;
     private HubConnection? connection;
-    private string? token;
+
+    private bool focus;
     public ChatRoom(Endpoint endpoint, Room room)
     {
         InitializeComponent();
         this.endpoint = endpoint;
         this.room = room;
+
+        var hook = new TaskPoolGlobalHook();
+        hook.KeyPressed += KeyPressed;
+        hook.RunAsync();
+
     }
+
+    private void KeyPressed(object? obj, KeyboardHookEventArgs args)
+    {
+        if (args.Data.KeyCode == KeyCode.VcEnter && focus)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                SendButton_OnClicked(null, null);
+            });
+           
+        }
+    }
+    
 
     protected override async void OnAppearing()
     {
+
+        ConnectToRoom();
         connection = new HubConnectionBuilder()
             .WithUrl($"{endpoint.url}/new-message",
                 (opts) =>
                 {
+                    opts.Headers["Authorization"] = $"Bearer {Authentication.Token}";
                     opts.HttpMessageHandlerFactory = message =>
                     {
                         if (message is HttpClientHandler clientHandler)
@@ -36,15 +60,13 @@ public partial class ChatRoom : ContentPage
                                 (_, _, _, _) => true;
                         return message;
                     };
-                    opts.Headers["Authorization"] = $"Bearer {Authentication.Token}";
+                   
                 }
 
 
                 )
             .Build();
-
-        connection.On<string>("ReceiveId", ConnectToRoom);
-
+        
         connection.On<string>("ReceiveMessage", message =>
         {
             var messageObject = JsonConvert.DeserializeObject<Message>(message);
@@ -53,7 +75,7 @@ public partial class ChatRoom : ContentPage
                 var label = new MessageBubble
                 {
                     MessageText = messageObject.message,
-                    IsIncoming = messageObject.sender != token,
+                    IsIncoming = messageObject.sender != Authentication.Token,
                 };
                 MessagesStack.Children.Add(label);
             });
@@ -63,9 +85,8 @@ public partial class ChatRoom : ContentPage
 
     }
 
-    private async void ConnectToRoom(string? roomToken)
+    private async void ConnectToRoom()
     {
-        token = roomToken;
         var response = await endpoint.Request(APIEndpoints.RoomEndpoints.Connect, id: room.id);
 
         if (response.StatusCode != HttpStatusCode.OK)
@@ -89,9 +110,20 @@ public partial class ChatRoom : ContentPage
         var messageObject = new Message
         {
             message = message,
-            sender = token
+            sender = Authentication.Token
         };
         var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id);
 
+    }
+
+    private void MessageEntry_OnFocused(object? sender, FocusEventArgs e)
+    {
+        focus = true;
+
+    }
+
+    private void MessageEntry_OnUnfocused(object? sender, FocusEventArgs e)
+    {
+        focus = false;
     }
 }

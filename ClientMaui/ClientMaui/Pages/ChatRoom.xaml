@@ -3,26 +3,31 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ClientMaui.ChatRoom"
              Title="ChatRoom">
-    <VerticalStackLayout>
-        <Label 
-            Text="Ultimate chatting room"
-            Style="{StaticResource Headline}"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-        <VerticalStackLayout x:Name="MessagesStack"></VerticalStackLayout>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="100"/>
-            </Grid.RowDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <VerticalStackLayout>
+            <Label 
+                Text="Ultimate chatting room"
+                Style="{StaticResource Headline}"
+                VerticalOptions="Center" 
+                HorizontalOptions="Center" />
+
+            <ScrollView VerticalOptions="FillAndExpand">
+                <StackLayout  x:Name="MessagesStack" Spacing="10" Margin="10,0,10,0"/>
+            </ScrollView>
+        </VerticalStackLayout>
+        <Grid VerticalOptions="End" Grid.Row="1" Margin="30">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="6*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Entry x:Name="MessageEntry" Grid.Row="1" Placeholder="Type your message here"></Entry>
-            <Button x:Name="SendButton" Grid.Row="1" Grid.Column="1" Text="Send" Clicked="SendButton_OnClicked"></Button>
+            <Entry x:Name="MessageEntry" Placeholder="Type your message here" Margin="0,0,10,0" Focused="MessageEntry_OnFocused" Unfocused="MessageEntry_OnUnfocused"></Entry>
+            <Button x:Name="SendButton" Grid.Column="1" Text="👉" Clicked="SendButton_OnClicked"></Button>
 
         </Grid>
-
-    </VerticalStackLayout>
+    </Grid>
+  
 </ContentPage>

@@ -50,6 +50,7 @@ namespace ClientMaui.API
     {
         private const string Api = "api/";
         private const string Room = Api + "room/";
+        private const string Authentication = Api + "authentication/";
 
 
         public struct RoomEndpoints
@@ -61,6 +62,12 @@ namespace ClientMaui.API
             public const string Connect = Room + "connect";
             public const string SendMessage = Room + "sendMessage";
             public const string MessageList = Room + "messageList";
+        }
+        public struct UserEndpoints
+        {
+            public const string Register = Authentication + "register";
+            public const string Login = Authentication + "login";
+            public const string Renew = Authentication + "renew";
         }
 
     }

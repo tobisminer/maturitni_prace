@@ -1,5 +1,6 @@
 ﻿using ClientMaui.API;
 using System.Net;
+using ClientMaui.Pages;
 using static ClientMaui.API.APIEndpoints;
 
 namespace ClientMaui
@@ -30,10 +31,7 @@ namespace ClientMaui
                 await DisplayAlert("Error", "Error occured while connecting to server, check IP address and port!", "OK");
                 return;
             }
-            var roomSelect = new RoomSelect(endpoint);
-            await Navigation.PushAsync(roomSelect);
-
-
+            await Navigation.PushAsync(new LoginPage(endpoint));
         }
     }
 

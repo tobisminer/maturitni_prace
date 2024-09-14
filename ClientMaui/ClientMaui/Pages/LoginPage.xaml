@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClientMaui.Pages.LoginPage"
+             Title="LoginPage">
+    <VerticalStackLayout>
+        <Label Text="Login" Style="{StaticResource Headline}" SemanticProperties.HeadingLevel="Level1" />
+        <Entry x:Name="UsernameEntry" Margin="10,10,10,10"> </Entry>
+        <Entry x:Name="PasswordEntry" Margin="10,10,10,10"></Entry>
+        <Grid HorizontalOptions="Fill" VerticalOptions="Start">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="RegisterBtn" Grid.Column="0" Text="Registrovat se" Clicked="RegisterBtn_OnClicked" ></Button>
+
+            <Button x:Name="LoginBtn" Grid.Column="2" Text="Přihlásit se" Clicked="LoginBtn_OnClicked"></Button>
+        </Grid>
+    </VerticalStackLayout>
+</ContentPage>

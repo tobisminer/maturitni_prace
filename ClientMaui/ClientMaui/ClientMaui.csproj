@@ -72,10 +72,14 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="RestSharp" Version="112.0.0" />
+		<PackageReference Include="SharpHook" Version="5.3.7" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <MauiXaml Update="Pages\ChatRoom.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Pages\LoginPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\RoomSelect.xaml">

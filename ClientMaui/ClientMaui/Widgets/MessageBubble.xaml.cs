@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ClientMaui.Widgets;
 
 public partial class MessageBubble : ContentView
@@ -24,13 +26,27 @@ public partial class MessageBubble : ContentView
     {
         InitializeComponent();
         BindingContext = this;
+        HorizontalOptions = IsIncoming ? LayoutOptions.Start : LayoutOptions.End;
+        Frame.BackgroundColor = IsIncoming ? Colors.LightBlue : Colors.Red;
     }
 
     protected override void OnPropertyChanged(string propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
         if (propertyName != nameof(IsIncoming)) return;
-        BackgroundColor = IsIncoming ? Colors.LightGray : Colors.Blue;
         HorizontalOptions = IsIncoming ? LayoutOptions.Start : LayoutOptions.End;
+        Frame.BackgroundColor = IsIncoming ? Colors.LightBlue : Colors.Red;
+    }
+}
+public class BoolToHorizontalOptionsConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return (bool)value ? LayoutOptions.Start : LayoutOptions.End;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
     }
 }
