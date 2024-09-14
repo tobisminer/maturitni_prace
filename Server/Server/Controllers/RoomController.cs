@@ -23,13 +23,17 @@ namespace Server.Controllers
 
         [HttpGet("list")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<List<RoomDTO>> List()
+        public ActionResult<List<RoomDTO>> List([FromHeader] string authorization)
         {
-            var rooms = db.Rooms.ToList().Select(room => new RoomDTO
+            authorization = Authentication.GetTokenFromHeader(authorization);
+            var identification = Authentication.GetIdentifierFromToken(db, authorization);
+            var rooms = (from room in db.Rooms.ToList()
+            let canConnect = room.key_person_1 == identification || room.key_person_2 == identification || room.key_person_1 == null || room.key_person_2 == null
+            select new RoomDTO
             {
                 id = room.id,
                 created_at = room.created_at,
-                is_full = room.is_full,
+                can_connect = canConnect,
                 key_person_1 = room.key_person_1 != null ? "Full" : null,
                 key_person_2 = room.key_person_2 != null ? "Full" : null
             }).ToList();
@@ -50,16 +54,14 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<string> Delete(int id)
         {
-            if (id < 0)
+            //TODO: Add authentication
+            var result = Validate(id);
+            if (result != null)
             {
-                return BadRequest("Invalid ID");
-            }
-            if (db.Rooms.Find(id) == null)
-            {
-                return NotFound("Not Found");
+                return result;
             }
 
-            db.Rooms.Remove(db.Rooms.Find(id));
+            db.Rooms.Remove(db.Rooms.Find(id)!);
             db.SaveChanges();
             return Ok("Deleted");
         }
@@ -83,30 +85,21 @@ namespace Server.Controllers
         public ActionResult<string> Connect(int id, [FromHeader] string authorization)
         {
             authorization = Authentication.GetTokenFromHeader(authorization);
-            if (id < 0)
-            {
-                return BadRequest("Invalid ID");
-            }
-            if (db.Rooms.Find(id) == null)
-            {
-                return NotFound("Not Found");
-            }
-            if(authorization == "")
-            {
-                return Unauthorized("Invalid Authentication");
-            }
-
-            var room = db.Rooms.Find(id)!;
-            if (room.is_full != null && (bool)room.is_full)
-            {
-                return BadRequest("Room is full");
-            }
             var identification = Authentication.GetIdentifierFromToken(db, authorization);
-            if (identification == null)
+            var room = db.Rooms.Find(id);
+            var result = Validate(id, identification, true);
+            if (result != null)
             {
-                return Unauthorized("Invalid Authentication");
+                return result;
             }
 
+            if (identification == room?.key_person_1 ||
+                identification == room?.key_person_2)
+            {
+                return Ok();
+            }
+            
+         
             if (room.key_person_1 == null)
             {
                 room.key_person_1 = identification;
@@ -114,7 +107,6 @@ namespace Server.Controllers
             else if (room.key_person_2 == null)
             {
                 room.key_person_2 = identification;
-                room.is_full = true;
             }
             db.SaveChanges();
             return Ok();
@@ -128,35 +120,18 @@ namespace Server.Controllers
         public ActionResult<string> Message(int id, [FromBody] Message message, [FromHeader] string authorization)
         {
             authorization = Authentication.GetTokenFromHeader(authorization);
-            if (id < 0)
-            {
-                return BadRequest("Invalid ID");
-            }
-            if (db.Rooms.Find(id) == null)
-            {
-                return NotFound("Not Found");
-            }
-
-            var room = db.Rooms.Find(id)!;
-            if (room.key_person_1 == null || room.key_person_2 == null)
-            {
-                return BadRequest("Room is not full");
-            }
+            var room = db.Rooms.Find(id);
             var identification = Authentication.GetIdentifierFromToken(db, authorization);
-            if (identification == null)
+            var result = Validate(id, identification, true, true);
+            if (result != null)
             {
-                return Unauthorized("Invalid Authentication");
+                return result;
             }
-
-            if (identification != room.key_person_1 && identification != room.key_person_2)
-            {
-                return Unauthorized("Invalid Identification");
-            }
-
+            
             var messageObject = new Message
             {
                 message = message.message,
-                sender = identification,
+                sender = authorization,
                 send_at = DateTime.Now
             };
 
@@ -167,11 +142,8 @@ namespace Server.Controllers
             //convert messageObject to string variable
 
             var messageString = JsonConvert.SerializeObject(messageObject);
-
-            
-
-            newMessageHub.Clients.Client(NewMessageHub.connectionToken[room.key_person_1]).SendAsync("ReceiveMessage", messageString);
-            newMessageHub.Clients.Client(NewMessageHub.connectionToken[room.key_person_2]).SendAsync("ReceiveMessage", messageString);
+            newMessageHub.SendToUser(room.key_person_1, messageString);
+            newMessageHub.SendToUser(room.key_person_2, messageString);
             return Ok("Message sent");
         }
 
@@ -182,28 +154,37 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<List<Message>> GetMessages(int id, [FromHeader] string identification)
         {
-            if (id < 0)
+            var room = db.Rooms.Include(room => room.Messages).FirstOrDefault(room => room.id == id);
+
+            var result = Validate(id, identification, true, true);
+            return result ?? Ok(room.Messages);
+        }
+
+        private ActionResult? Validate(int? roomId = null, string? identification = null, bool checkIdentification = false, bool checkRoomIdentification = false)
+        {
+            if (roomId is < 0)
             {
                 return BadRequest("Invalid ID");
             }
-            if (db.Rooms.Find(id) == null)
+            var room = db.Rooms.Find(roomId);
+            if (roomId != null && room == null)
             {
                 return NotFound("Not Found");
             }
 
-            var room = db.Rooms.Include(room => room.Messages).FirstOrDefault(room => room.id == id);
-            if (room.key_person_1 == null || room.key_person_2 == null)
+            if (checkIdentification && string.IsNullOrEmpty(identification))
             {
-                return BadRequest("Room is not full");
+                return Unauthorized("Invalid Authentication");
             }
 
-            if (identification != room.key_person_1 && identification != room.key_person_2)
+            if (checkRoomIdentification && (identification != room?.key_person_1 && identification != room?.key_person_2))
             {
-                return Unauthorized("Invalid Identification");
+                return Unauthorized("Invalid access to room");
             }
 
-            return Ok(room.Messages);
+            return null;
         }
+
 
 
     }

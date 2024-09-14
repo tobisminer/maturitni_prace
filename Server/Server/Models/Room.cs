@@ -9,7 +9,7 @@ namespace Server.Models
         {
             Messages = new List<Message>();
             created_at = DateTime.Now;
-            is_full = false;
+            can_connect = true;
         }
 
         [Key]
@@ -21,7 +21,7 @@ namespace Server.Models
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
 
-        public bool? is_full { get; set; }
+        public bool? can_connect { get; set; }
 
         public DateTime created_at { get; set; }
 
@@ -37,7 +37,7 @@ namespace Server.Models
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
 
-        public bool? is_full { get; set; }
+        public bool? can_connect { get; set; }
 
         public DateTime created_at { get; set; }
     }

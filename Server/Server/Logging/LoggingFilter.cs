@@ -6,12 +6,16 @@ namespace Server.Logging
     {
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            Console.WriteLine($"Executing {context.HttpContext.Request.Method} {context.HttpContext.Request.Path}");
+            var method = context.HttpContext.Request.Method;
+            var path = context.HttpContext.Request.Path;
+            Console.WriteLine($"Executing {method} @ {path}");
         }
 
         public void OnActionExecuted(ActionExecutedContext context)
         {
-            Console.WriteLine($"Executed {context.HttpContext.Request.Method} {context.HttpContext.Request.Path}");
+            var method = context.HttpContext.Request.Method;
+            var path = context.HttpContext.Request.Path;
+            Console.WriteLine($"Executing {method} @ {path}");
         }
     }
 }

@@ -12,13 +12,16 @@ namespace Server.SignalR
             Console.WriteLine($"Client {Context.ConnectionId} connected");
 
             var context = Context.GetHttpContext();
-            var token = context.Request.Query["Authorization"].ToString().Replace("Bearer ", "");
+            var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
             var identifier = Authentication.GetIdentifierFromToken(db, token);
             if (identifier == null)
             {
                 return base.OnConnectedAsync();
             }
+
+            if (connectionToken.ContainsKey(identifier))
+                connectionToken.Remove(identifier);
             connectionToken.Add(identifier, Context.ConnectionId);
             
             return base.OnConnectedAsync();

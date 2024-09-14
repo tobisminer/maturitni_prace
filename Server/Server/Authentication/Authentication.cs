@@ -7,7 +7,8 @@ namespace Server
     {
         public static string? GetIdentifierFromToken(ApplicationDbContext db, string token)
         {
-            var tokenEntity = db.Tokens.FirstOrDefault(x => x.token == token);
+            var tokens = db.Tokens.ToList();
+            var tokenEntity = tokens.FirstOrDefault(tokenEntity => tokenEntity.token == token);
             return tokenEntity?.active == false ? null : tokenEntity?.identifier;
         }
         public static string GetTokenFromHeader(string header)

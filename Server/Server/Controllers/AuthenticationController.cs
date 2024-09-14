@@ -28,7 +28,7 @@ namespace Server.Controllers
             }
 
             var hash = LocalHash.Sha256(register.password);
-            var identifier = RandomGenerator.generateRandomString();
+            var identifier = RandomGenerator.GenerateRandomString();
             var user = new UserLogin
                 {
                     username = register.username,
@@ -61,7 +61,7 @@ namespace Server.Controllers
             {
                 return Ok(token);
             }
-            token = RandomGenerator.generateRandomString();
+            token = RandomGenerator.GenerateRandomString();
             var tokenModel = new Token
             {
                 token = token,
@@ -82,7 +82,7 @@ namespace Server.Controllers
             {
                 return BadRequest("Invalid token");
             }
-            token.token = RandomGenerator.generateRandomString();
+            token.token = RandomGenerator.GenerateRandomString();
             token.created_at = DateTime.Now;
             db.SaveChanges();
             return Ok(token.token);

@@ -2,7 +2,7 @@
 {
     public class RandomGenerator
     {
-        public static string generateRandomString(int length = 128)
+        public static string GenerateRandomString(int length = 128)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             var random = new Random();
