@@ -11,8 +11,6 @@ namespace Server.Models
 
     }
 
-
-
     public class UserLogin
     {
         public UserLogin()
@@ -29,16 +27,6 @@ namespace Server.Models
         public string? passwordHash { get; set; }
 
         public string? identifier { get; set; }
-
-        public DateTime created_at { get; set; }
-    }
-    public class UserLoginDTO
-    {
-        public int id { get; set; }
-
-        public string? username { get; set; }
-
-        public string? passwordHash { get; set; }
 
         public DateTime created_at { get; set; }
     }

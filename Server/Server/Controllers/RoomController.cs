@@ -40,14 +40,6 @@ namespace Server.Controllers
 
             return Ok(rooms);
         }
-
-        [HttpGet("listDangerous")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<List<Room>> ListDangerous()
-        {
-            return Ok(db.Rooms.Include(room => room.Messages).ToList());
-        }
-
         [HttpDelete("delete/{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -77,16 +69,30 @@ namespace Server.Controllers
             return Ok(room);
         }
 
+        [HttpGet("roomTypes")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<List<string>> RoomTypes()
+        {
+            List<string> roomTypes = new()
+            {
+                "No Encryption",
+                "AES",
+                "DES"
+            };
+
+            return Ok(roomTypes);
+        }
+
         [HttpGet("connect/{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> Connect(int id, [FromHeader] string authorization)
+        public ActionResult<int> Connect(int id, [FromHeader] string authorization)
         {
             authorization = Authentication.GetTokenFromHeader(authorization);
             var identification = Authentication.GetIdentifierFromToken(db, authorization);
-            var room = db.Rooms.Find(id);
+            var room = db.Rooms.Include(room => room.Messages).ToList().FirstOrDefault(room => room.id == id);
             var result = Validate(id, identification, true);
             if (result != null)
             {
@@ -96,7 +102,7 @@ namespace Server.Controllers
             if (identification == room?.key_person_1 ||
                 identification == room?.key_person_2)
             {
-                return Ok();
+                return Ok(room.Messages.Count);
             }
             
          
@@ -109,7 +115,7 @@ namespace Server.Controllers
                 room.key_person_2 = identification;
             }
             db.SaveChanges();
-            return Ok();
+            return Ok(room.Messages.Count);
         }
 
         [HttpPost("sendMessage/{id:int}")]
@@ -147,17 +153,31 @@ namespace Server.Controllers
             return Ok("Message sent");
         }
 
-        [HttpGet("messageList/{id:int}")]
+        [HttpGet("messageList/{id:int}/{from:int}/{to:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<List<Message>> GetMessages(int id, [FromHeader] string identification)
+        public ActionResult<List<Message>> GetMessages(int id, int from, int to, [FromHeader] string authorization)
         {
             var room = db.Rooms.Include(room => room.Messages).FirstOrDefault(room => room.id == id);
+            authorization = Authentication.GetTokenFromHeader(authorization);
+            var identification =
+                Authentication.GetIdentifierFromToken(db, authorization);
+
 
             var result = Validate(id, identification, true, true);
-            return result ?? Ok(room.Messages);
+            if (result != null)
+            {
+                return result;
+            }
+            if (from < 0 || to < 0 || from > to)
+            {
+                return BadRequest("Invalid range");
+            }
+
+            return Ok(room.Messages.Skip(from).Take(to - from).ToList());
+
         }
 
         private ActionResult? Validate(int? roomId = null, string? identification = null, bool checkIdentification = false, bool checkRoomIdentification = false)

@@ -9,6 +9,9 @@ namespace Server.Data
         {
             modelBuilder.Entity<Room>()
                 .HasMany(e => e.Messages);
+            modelBuilder.Entity<Room>()
+                .HasMany(e => e.Persons);
+
         }
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Message> Messages { get; set; }

@@ -18,6 +18,8 @@ namespace Server.Models
 
         public ICollection<Message> Messages { get; set; }
 
+        public ICollection<Token> Persons { get; set; }
+
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
 
