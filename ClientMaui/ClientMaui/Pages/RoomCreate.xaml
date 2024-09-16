@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClientMaui.Pages.RoomCreate"
+             Title="RoomCreate">
+    
+        <Grid ColumnDefinitions="*,5*,*">
+        <VerticalStackLayout Grid.Column="1" Spacing="10">
+                <Label 
+                       Text="Room Creation"
+                       VerticalOptions="Center"  HorizontalOptions="Center"/>
+                <Entry  VerticalOptions="Center" x:Name="RoomNameEntry" Placeholder="Room name" Margin="10,0,10,0"></Entry>
+                <Picker x:Name="RoomTypePicker" VerticalOptions="Center" Title="Select room encryption"></Picker>
+                <Button  x:Name="CreateBtn" Text="Create" Clicked="CreateBtn_OnClicked" HorizontalOptions="Center" Margin="20,20,20,0"></Button>
+        </VerticalStackLayout>
+           
+
+</Grid>
+       
+ 
+</ContentPage>

@@ -76,10 +76,19 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Widgets\RoomListWidget.xaml.cs">
+	    <DependentUpon>RoomListWidget.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <MauiXaml Update="Pages\ChatRoom.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\LoginPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Pages\RoomCreate.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\RoomSelect.xaml">
@@ -88,7 +97,10 @@
 	  <MauiXaml Update="Widgets\MessageBubble.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Widgets\RoomWidget.xaml">
+	  <MauiXaml Update="Widgets\RoomCreateWidget.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Widgets\RoomListWidget.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

@@ -4,11 +4,14 @@ namespace ClientMaui.Widgets;
 
 public partial class MessageBubble : ContentView
 {
+    public int id;
+
     public static readonly BindableProperty MessageTextProperty =
         BindableProperty.Create(nameof(MessageText), typeof(string), typeof(MessageBubble), string.Empty);
 
     public static readonly BindableProperty IsIncomingProperty =
         BindableProperty.Create(nameof(IsIncoming), typeof(bool), typeof(MessageBubble), true);
+
 
     public string MessageText
     {
@@ -22,9 +25,10 @@ public partial class MessageBubble : ContentView
         set => SetValue(IsIncomingProperty, value);
     }
 
-    public MessageBubble()
+    public MessageBubble(int id)
     {
         InitializeComponent();
+        this.id = id;
         BindingContext = this;
         HorizontalOptions = IsIncoming ? LayoutOptions.Start : LayoutOptions.End;
         Frame.BackgroundColor = IsIncoming ? Colors.LightBlue : Colors.Red;
