@@ -14,7 +14,9 @@ namespace ClientMaui.API
             string endpoint,
             string body = "",
             Method method = Method.Get,
-            int id = 0)
+            int id = 0,
+            int? from = null,
+            int? to = null)
         {
             var request = new RestRequest(endpoint)
             {
@@ -24,6 +26,14 @@ namespace ClientMaui.API
             if (id != 0)
             {
                 request.Resource += $"/{id}";
+            }
+            if(from != null)
+            {
+                request.Resource += $"/{from}";
+            }
+            if (to != null)
+            {
+                request.Resource += $"/{to}";
             }
 
             if (Authentication.Token != "")
@@ -56,9 +66,10 @@ namespace ClientMaui.API
         public struct RoomEndpoints
         {
             public const string Index = Room;
-            public const string RoomList = Room + "listDangerous";
+            public const string RoomList = Room + "list";
             public const string Delete = Room + "delete";
             public const string Create = Room + "create";
+            public const string RoomTypes = Room + "roomTypes";
             public const string Connect = Room + "connect";
             public const string SendMessage = Room + "sendMessage";
             public const string MessageList = Room + "messageList";
