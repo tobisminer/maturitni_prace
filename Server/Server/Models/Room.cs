@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Server.Enums;
 
 namespace Server.Models
 {
@@ -16,9 +17,12 @@ namespace Server.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int id { get; set; }
 
-        public ICollection<Message> Messages { get; set; }
+        public string name { get; set; }
 
-        public ICollection<Token> Persons { get; set; }
+        public ICollection<Message> Messages { get; set; }
+        public RoomType RoomType { get; set; }
+
+        public string? cryptography_key { get; set; }
 
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
@@ -27,14 +31,16 @@ namespace Server.Models
 
         public DateTime created_at { get; set; }
 
-
     }
 
     public class RoomDTO
     {
         public int id { get; set; }
+        public string name { get; set; }
 
         public ICollection<Message> Messages { get; set; }
+
+        public string RoomType { get; set; }
 
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
@@ -65,4 +71,9 @@ namespace Server.Models
         public Room Room { get; set; }
     }
 
+    public class RoomCreation
+    {
+        public string name { get; set; }
+        public string room_type { get; set; }
+    }
 }

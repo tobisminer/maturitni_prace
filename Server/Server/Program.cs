@@ -66,6 +66,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.Use(next => context =>
+    {
+        context.Request.EnableBuffering();
+        return next(context);
+    });
 }
 using (var scope = app.Services.CreateScope())
 {

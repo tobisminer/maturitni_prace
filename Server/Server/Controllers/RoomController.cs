@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Server.Data;
+using Server.Enums;
 using Server.Models;
 using Server.SignalR;
 
@@ -28,11 +29,16 @@ namespace Server.Controllers
             authorization = Authentication.GetTokenFromHeader(authorization);
             var identification = Authentication.GetIdentifierFromToken(db, authorization);
             var rooms = (from room in db.Rooms.ToList()
-            let canConnect = room.key_person_1 == identification || room.key_person_2 == identification || room.key_person_1 == null || room.key_person_2 == null
+            let canConnect = room.key_person_1 == identification ||
+                             room.key_person_2 == identification ||
+                             room.key_person_1 == null ||
+                             room.key_person_2 == null
             select new RoomDTO
             {
                 id = room.id,
+                name = room.name,
                 created_at = room.created_at,
+                RoomType = room.RoomType.ToFriendlyString(),
                 can_connect = canConnect,
                 key_person_1 = room.key_person_1 != null ? "Full" : null,
                 key_person_2 = room.key_person_2 != null ? "Full" : null
@@ -60,9 +66,15 @@ namespace Server.Controllers
 
         [HttpPost("create")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<RoomDTO> Create()
+        public ActionResult<RoomDTO> Create([FromBody] RoomCreation roomSettings)
         {
-            var room = new Room();
+            var type = RoomTypesExtensions.FromFriendlyString(roomSettings.room_type);
+            var room = new Room
+            {
+                name = roomSettings.name,
+                RoomType = type,
+                created_at = DateTime.Now
+            };
             db.Rooms.Add(room);
             db.SaveChanges();
 
@@ -73,14 +85,7 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<List<string>> RoomTypes()
         {
-            List<string> roomTypes = new()
-            {
-                "No Encryption",
-                "AES",
-                "DES"
-            };
-
-            return Ok(roomTypes);
+            return Ok(RoomTypesExtensions.GetAll());
         }
 
         [HttpGet("connect/{id:int}")]
@@ -102,11 +107,11 @@ namespace Server.Controllers
             if (identification == room?.key_person_1 ||
                 identification == room?.key_person_2)
             {
-                return Ok(room.Messages.Count);
+                return Ok(room!.Messages.Count);
             }
             
          
-            if (room.key_person_1 == null)
+            if (room!.key_person_1 == null)
             {
                 room.key_person_1 = identification;
             }
@@ -116,6 +121,47 @@ namespace Server.Controllers
             }
             db.SaveChanges();
             return Ok(room.Messages.Count);
+        }
+
+
+        [HttpGet("getSecretKey/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<string?> GetSecretKey(int id, [FromHeader] string authorization)
+        {
+            authorization = Authentication.GetTokenFromHeader(authorization);
+            var identification = Authentication.GetIdentifierFromToken(db, authorization);
+            var room = db.Rooms.Find(id);
+            var result = Validate(id, identification, true, true);
+            if (result != null)
+            {
+                return result;
+            }
+            
+            return Ok(room.cryptography_key);
+        }
+
+        [HttpPost("setSecretKey/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<string> SetSecretKey(int id, [FromBody] string key, [FromHeader] string authorization)
+        {
+            authorization = Authentication.GetTokenFromHeader(authorization);
+            var identification = Authentication.GetIdentifierFromToken(db, authorization);
+            var room = db.Rooms.Find(id);
+            var result = Validate(id, identification, true, true);
+            if (result != null)
+            {
+                return result;
+            }
+
+            room!.cryptography_key = key;
+            db.SaveChanges();
+            return Ok("Key set");
         }
 
         [HttpPost("sendMessage/{id:int}")]
@@ -141,7 +187,7 @@ namespace Server.Controllers
                 send_at = DateTime.Now
             };
 
-            room.Messages.Add(messageObject);
+            room!.Messages.Add(messageObject);
 
             db.SaveChanges();
 
@@ -165,7 +211,6 @@ namespace Server.Controllers
             var identification =
                 Authentication.GetIdentifierFromToken(db, authorization);
 
-
             var result = Validate(id, identification, true, true);
             if (result != null)
             {
@@ -176,8 +221,7 @@ namespace Server.Controllers
                 return BadRequest("Invalid range");
             }
 
-            return Ok(room.Messages.Skip(from).Take(to - from).ToList());
-
+            return Ok(room!.Messages.Skip(from).Take(to - from).ToList());
         }
 
         private ActionResult? Validate(int? roomId = null, string? identification = null, bool checkIdentification = false, bool checkRoomIdentification = false)
@@ -204,10 +248,5 @@ namespace Server.Controllers
 
             return null;
         }
-
-
-
     }
-
-
 }

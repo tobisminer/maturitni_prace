@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices.JavaScript;
 
 namespace ClientMaui.Widgets;
 
@@ -25,32 +26,37 @@ public partial class MessageBubble : ContentView
         set => SetValue(IsIncomingProperty, value);
     }
 
+    public DateTime timeSend;
+    public DateTime? lastMessageSend;
+
     public MessageBubble(int id)
     {
         InitializeComponent();
         this.id = id;
         BindingContext = this;
+        SetValues();
+    }
+
+    private void SetValues()
+    {
         HorizontalOptions = IsIncoming ? LayoutOptions.Start : LayoutOptions.End;
         Frame.BackgroundColor = IsIncoming ? Colors.LightBlue : Colors.Red;
+        if (lastMessageSend != null && sameTimeToMinutes(timeSend, lastMessageSend.Value))
+            TimeLbl.IsEnabled = false;
+        TimeLbl.Text = timeSend.ToString("f");
     }
 
     protected override void OnPropertyChanged(string propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
         if (propertyName != nameof(IsIncoming)) return;
-        HorizontalOptions = IsIncoming ? LayoutOptions.Start : LayoutOptions.End;
-        Frame.BackgroundColor = IsIncoming ? Colors.LightBlue : Colors.Red;
-    }
-}
-public class BoolToHorizontalOptionsConverter : IValueConverter
-{
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        return (bool)value ? LayoutOptions.Start : LayoutOptions.End;
+        SetValues();
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public bool sameTimeToMinutes(DateTime first, DateTime second)
     {
-        throw new NotImplementedException();
+       return first.Day == second.Day && first.Hour == second.Hour &&
+               first.Minute == second.Minute;
     }
 }
+

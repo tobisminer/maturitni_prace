@@ -7,7 +7,7 @@ namespace ClientMaui.API
     {
         public string url = url;
 
-        private RestClient _client = new(url);
+        private readonly RestClient _client = new(url);
 
 
         public async Task<RestResponse> Request(
@@ -73,6 +73,8 @@ namespace ClientMaui.API
             public const string Connect = Room + "connect";
             public const string SendMessage = Room + "sendMessage";
             public const string MessageList = Room + "messageList";
+            public const string GetKey = Room + "getSecretKey";
+            public const string SetKey = Room + "setSecretKey";
         }
         public struct UserEndpoints
         {

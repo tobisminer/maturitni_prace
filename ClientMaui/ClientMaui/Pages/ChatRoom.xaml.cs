@@ -8,6 +8,7 @@ using SharpHook;
 using SharpHook.Native;
 using System.Net;
 using System.Security.Cryptography;
+using ClientMaui.Cryptography;
 
 namespace ClientMaui;
 public partial class ChatRoom : ContentPage
@@ -18,6 +19,8 @@ public partial class ChatRoom : ContentPage
 
     private bool focus;
     private TaskPoolGlobalHook hook;
+
+    private ICryptography? cypher;
     
     private readonly int oldMessageToLoadCount = 20;
     private int lastMessageCount = 0;
@@ -45,7 +48,13 @@ public partial class ChatRoom : ContentPage
 
     private void KeyPressed(object? obj, KeyboardHookEventArgs args)
     {
-        if (args.Data.KeyCode == KeyCode.VcEnter && focus)
+        List<KeyCode> keyListSend =
+        [
+            KeyCode.VcEnter,
+            KeyCode.VcNumPadEnter
+        ];
+
+        if (keyListSend.Contains(args.Data.KeyCode) && focus)
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
@@ -82,10 +91,15 @@ public partial class ChatRoom : ContentPage
             Dispatcher.Dispatch(() =>
             {
                 if (messageObject?.message == null) return;
+                MessageBubble? lastMessage = default;
+                if (MessagesStack.Children.OfType<MessageBubble>().Count() != 0)
+                    lastMessage = MessagesStack.Children.OfType<MessageBubble>().Last();
                 var label = new MessageBubble(messageObject.id)
                 {
-                    MessageText = messageObject?.message,
+                    MessageText = DecryptMessage(messageObject?.message),
                     IsIncoming = messageObject.sender != Authentication.Token,
+                    timeSend = messageObject.send_at,
+                    lastMessageSend = lastMessage?.timeSend ?? null
                 };
                 MessagesStack.Children.Add(label);
             });
@@ -109,7 +123,10 @@ public partial class ChatRoom : ContentPage
             return;
         }
         if (response.Content != null) messageCount = int.Parse(response.Content);
-    
+
+        await CryptographyTask();
+
+
         lastMessageCount += oldMessageToLoadCount;
         var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id, from: 0, to: oldMessageToLoadCount);
         if (messages.StatusCode != HttpStatusCode.OK)
@@ -119,7 +136,7 @@ public partial class ChatRoom : ContentPage
         var messageList = JsonConvert.DeserializeObject<List<Message>>(messages.Content);
         foreach (var label in messageList.Select(message => new MessageBubble(message.id)
                  {
-                     MessageText = message.message,
+                     MessageText = DecryptMessage(message.message),
                      IsIncoming = message.sender != Authentication.Token,
                  }))
         {
@@ -131,13 +148,39 @@ public partial class ChatRoom : ContentPage
 
     }
 
+    private async Task CryptographyTask()
+    {
+        if (room.RoomType == "No Encryption") return;
+
+        cypher = CryptographyHelper.GetCryptography(room.RoomType); 
+
+        var key = (await endpoint.Request(APIEndpoints.RoomEndpoints.GetKey, id: room.id)).Content;
+        if (string.IsNullOrEmpty(key))
+        {
+            key = cypher.GenerateKey();
+            await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: key, method: Method.Post, id: room.id);
+        }
+        cypher.key = key;
+
+    }
+
+    private string EncryptMessage(string message)
+    {
+        return cypher == null ? message : cypher.Encrypt(message);
+    }
+    private string DecryptMessage(string message)
+    {
+        return cypher == null ? message : cypher.Decrypt(message);
+    }
+
+
     private async void SendButton_OnClicked(object? sender, EventArgs e)
     {
         var message = MessageEntry.Text;
         MessageEntry.Text = "";
         Message messageObject = new()
         {
-            message = message,
+            message = EncryptMessage(message),
             sender = Authentication.Token
         };
         var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id);
@@ -166,7 +209,7 @@ public partial class ChatRoom : ContentPage
         var firstMessage = MessagesStack.Children.OfType<MessageBubble>().First();
         foreach (var label in messageList.Select(message => new MessageBubble(message.id)
         {
-            MessageText = message.message,
+            MessageText = DecryptMessage(message.message),
             IsIncoming = message.sender != Authentication.Token,
         }))
         {

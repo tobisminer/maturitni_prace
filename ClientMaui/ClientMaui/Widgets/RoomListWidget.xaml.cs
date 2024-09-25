@@ -10,8 +10,8 @@ public partial class RoomListWidget : ContentView
         InitializeComponent();
 
         this.room = room;
-        RoomHeader.Text += room.id + " - ";
-        int personCount = GetNumberOfPerson();
+        RoomHeader.Text = room.name;
+        var personCount = GetNumberOfPerson();
         RoomHeader.Text += personCount switch
         {
             1 => "👤",
