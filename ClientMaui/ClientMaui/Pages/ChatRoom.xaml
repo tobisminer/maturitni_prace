@@ -3,21 +3,40 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ClientMaui.ChatRoom"
              Title="ChatRoom">
-    <Grid>
+    <Grid >
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <VerticalStackLayout VerticalOptions="Fill">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <Label 
+                Grid.Column="1"
+                x:Name="HeaderLabel"
                 Text="Ultimate chatting room"
                 Style="{StaticResource Headline}"
                 VerticalOptions="Center" 
                 HorizontalOptions="Center" />
+            <Button 
+                Grid.Column="2"
+                x:Name="SwitchModeButton" 
+                WidthRequest="150"
+                HeightRequest="10" 
+                HorizontalOptions="End" 
+                VerticalOptions="Center"
+                Clicked="SwitchModeButton_OnClicked" 
+                Height="10" 
+                Margin="10"
+                BackgroundColor="#80FFFFFF"
+                Text="Klasický režim"
+                ></Button>
+        </Grid>
 
-           
-        </VerticalStackLayout>
         <Grid Grid.Row="1" RowDefinitions="*">
             <ScrollView x:Name="ScrollView" Scrolled="ScrollView_OnScrolled" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
                 <VerticalStackLayout  x:Name="MessagesStack" Spacing="10" Margin="10,0,10,0"/>

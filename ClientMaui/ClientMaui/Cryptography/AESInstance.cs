@@ -1,25 +1,26 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ClientMaui.Cryptography
 {
-    internal class DES : ICryptography
+    internal class AESInstance : ICryptography
     {
-
         public string key { get; set; }
 
-        
         public string GenerateKey()
         {
             byte[] key;
 
-            var des = System.Security.Cryptography.DES.Create();
-            key = des.Key;
-            
+            var aes = Aes.Create();
+            key = aes.Key;
+
             return Convert.ToBase64String(key);
 
         }
-
 
         public async Task<string> Encrypt(string text)
         {
@@ -27,10 +28,10 @@ namespace ClientMaui.Cryptography
             var passwordBytes = Convert.FromBase64String(key);
 
             // Set encryption settings
-            var des = System.Security.Cryptography.DES.Create();
-            des.Padding = PaddingMode.PKCS7;
-            des.Mode = CipherMode.ECB;
-            var transform = des.CreateEncryptor(passwordBytes, null);
+            var aes = Aes.Create();
+            aes.Padding = PaddingMode.PKCS7;
+            aes.Mode = CipherMode.ECB;
+            var transform = aes.CreateEncryptor(passwordBytes, null);
             var mode = CryptoStreamMode.Write;
 
             // Set up streams and encrypt
@@ -52,14 +53,13 @@ namespace ClientMaui.Cryptography
 
         public async Task<string> Decrypt(string encryptedMessage, bool isIncoming = false)
         {
-            // Convert encrypted message and password to bytes
-            
             var encryptedMessageBytes = Convert.FromBase64String(encryptedMessage);
+           
 
             var passwordBytes = Convert.FromBase64String(key);
 
             // Set encryption settings 
-            var des = System.Security.Cryptography.DES.Create();
+            var des = System.Security.Cryptography.Aes.Create();
             des.Padding = PaddingMode.PKCS7;
             des.Mode = CipherMode.ECB;
             var transform = des.CreateDecryptor(passwordBytes, null);
@@ -74,11 +74,13 @@ namespace ClientMaui.Cryptography
             // Read decrypted message from memory stream
             var decryptedMessageBytes = new byte[memStream.Length];
             memStream.Position = 0;
-            _= memStream.Read(decryptedMessageBytes, 0, decryptedMessageBytes.Length);
+            _ = memStream.Read(decryptedMessageBytes, 0, decryptedMessageBytes.Length);
 
             var message = Encoding.UTF8.GetString(decryptedMessageBytes);
 
             return message;
         }
+
+
     }
 }

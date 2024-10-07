@@ -17,6 +17,7 @@ public partial class RoomListWidget : ContentView
             1 => "👤",
             _ => "\ud83e\udeb9"
         };
+        RoomSecurity.Text = room.RoomType;
         ConnectButton.IsEnabled = room.can_connect;
     }
 

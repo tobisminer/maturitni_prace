@@ -17,8 +17,10 @@
                 Text="Room #"
                 VerticalOptions="Center" 
                 HorizontalOptions="Center"
+                Style="{StaticResource SubHeadline}"
             />
-            <Button x:Name="ConnectButton" x:FieldModifier="public" Text="Connect" HorizontalOptions="Center" Margin="20,20,20,0"></Button>
+            <Label x:Name="RoomSecurity"  VerticalOptions="Center" HorizontalOptions="Center"></Label>
+            <Button x:Name="ConnectButton" x:FieldModifier="public" Text="Připojit" HorizontalOptions="Center" Margin="20,20,20,0"></Button>
         </VerticalStackLayout>
 
     </Border>

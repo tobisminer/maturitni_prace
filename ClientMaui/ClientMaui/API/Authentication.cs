@@ -30,8 +30,14 @@ namespace ClientMaui.API
             var response = await endpoint.Request(APIEndpoints.UserEndpoints.Login, method: Method.Post, body: JsonConvert.SerializeObject(user));
             if (response.StatusCode != HttpStatusCode.OK) return false;
             Token = response.Content.Replace("\"", "");
+
+            // save username so we can use it later
+            endpoint.username = username;
             return true;
         }
+       
+
+
 
         public async Task RenewToken()
         {

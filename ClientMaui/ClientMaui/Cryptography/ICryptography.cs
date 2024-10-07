@@ -1,12 +1,12 @@
 ﻿namespace ClientMaui.Cryptography
 {
-    interface ICryptography
+    public interface ICryptography
     {
 
-        public string GenerateKey(int length = 128);
+        public string GenerateKey();
         public string key { get; set; }
-        public string Encrypt(string text);
-        public string Decrypt(string text);
+        public Task<string> Encrypt(string text);
+        public Task<string> Decrypt(string text, bool isIncoming = false);
     }
 
     class CryptographyHelper
@@ -16,7 +16,10 @@
             return friendlyString switch
             {
                 "DES" => new DES(),
-                //"AES" => new AES(),
+                "AES" => new AESInstance(),
+                "Triple DES" => new TripleDES(),
+                "RC4" => new RCFour(),
+                "RSA" => new RSAInstance(),
                 _ => throw new NotImplementedException()
             };
 

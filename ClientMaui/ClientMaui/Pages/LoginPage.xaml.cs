@@ -29,7 +29,7 @@ public partial class LoginPage : ContentPage
 
     private async void LoginBtn_OnClicked(object? sender, EventArgs e)
     {
-        bool result = await _authentication.Login(UsernameEntry.Text, PasswordEntry.Text);
+        var result = await _authentication.Login(UsernameEntry.Text, PasswordEntry.Text);
         if (result)
         {
             await Navigation.PushAsync(new RoomSelect(_endpoint));

@@ -19,14 +19,22 @@ public partial class RoomCreate : ContentPage
     private async void Load()
     {
         RoomTypePicker.ItemsSource = await GetRoomTypes();
+        RoomTypePicker.SelectedIndex = 0;
     }
 
     private async Task<List<string>> GetRoomTypes()
     {
-        var response = await _endpoint.Request(APIEndpoints.RoomEndpoints.RoomTypes);
+        var response =
+            await _endpoint.Request(APIEndpoints.RoomEndpoints.RoomTypes);
         if (response is { StatusCode: HttpStatusCode.OK, Content: not null })
-            return JsonConvert
-                .DeserializeObject<List<string>>(response.Content)!;
+        {
+           var roomTypes =  JsonConvert
+                .DeserializeObject<List<RoomType>>(response.Content)!;
+           return (from roomType in roomTypes
+               let secure = roomType.isSecure ? "\ud83d\udd12" : "\ud83d\udd13"
+               select $"{roomType.name} - {secure}").ToList();
+        }
+    
         await DisplayAlert("Error", "Error occured while fetching room types!", "OK");
         return [];
 
@@ -42,7 +50,7 @@ public partial class RoomCreate : ContentPage
         var roomCreateJson = new RoomCreateJson
         {
             name = RoomNameEntry.Text,
-            room_type = RoomTypePicker.SelectedItem.ToString()!
+            room_type = RoomTypePicker.SelectedItem.ToString()!.Split(" -")[0]
         };
         var response = await _endpoint.Request(APIEndpoints.RoomEndpoints.Create, method:Method.Post, body:JsonConvert.SerializeObject(roomCreateJson));
         if (response.StatusCode != HttpStatusCode.OK)

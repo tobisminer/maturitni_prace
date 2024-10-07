@@ -83,7 +83,7 @@ namespace Server.Controllers
 
         [HttpGet("roomTypes")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<List<string>> RoomTypes()
+        public ActionResult<List<RoomTypeJson>> RoomTypes()
         {
             return Ok(RoomTypesExtensions.GetAll());
         }
@@ -139,16 +139,26 @@ namespace Server.Controllers
             {
                 return result;
             }
-            
+
+            if (room.RoomType == RoomType.RSA)
+            {
+                // If the room is RSA, return the public key of the other person
+                if (authorization == room.key_person_1)
+                {
+                    return Ok(room.public_key_person_2); 
+                }
+                return Ok(room.public_key_person_1);
+            }
+
             return Ok(room.cryptography_key);
-        }
+        }   
 
         [HttpPost("setSecretKey/{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> SetSecretKey(int id, [FromBody] string key, [FromHeader] string authorization)
+        public ActionResult<string> SetSecretKey(int id, [FromBody] KeyJson key, [FromHeader] string authorization)
         {
             authorization = Authentication.GetTokenFromHeader(authorization);
             var identification = Authentication.GetIdentifierFromToken(db, authorization);
@@ -159,7 +169,18 @@ namespace Server.Controllers
                 return result;
             }
 
-            room!.cryptography_key = key;
+            if (room.RoomType == RoomType.RSA)
+            {
+                if (identification == room.key_person_1)
+                {
+                    room.public_key_person_1 = key.key;
+                }
+                else
+                {
+                    room.public_key_person_2 = key.key;
+                }
+            }
+            room!.cryptography_key = key.key;
             db.SaveChanges();
             return Ok("Key set");
         }

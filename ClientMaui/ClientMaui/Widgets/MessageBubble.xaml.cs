@@ -1,5 +1,8 @@
 using System.Globalization;
 using System.Runtime.InteropServices.JavaScript;
+using ClientMaui.API;
+using ClientMaui.Cryptography;
+using ClientMaui.Entities.Room;
 
 namespace ClientMaui.Widgets;
 
@@ -29,22 +32,50 @@ public partial class MessageBubble : ContentView
     public DateTime timeSend;
     public DateTime? lastMessageSend;
 
-    public MessageBubble(int id)
+    private Message message;
+
+    public MessageBubble(Message message)
     {
         InitializeComponent();
-        this.id = id;
         BindingContext = this;
+        this.id = message.id;
+        this.message = message;
+        MessageText = message.message;
+        timeSend = message.send_at;
+        IsIncoming = Authentication.Token != message.sender;
         SetValues();
+    }
+
+    public async void setMessageDecryptStatus(ICryptography? cypher, bool decrypt = true)
+    {
+        MessageText = decrypt && cypher != null ? await cypher.Decrypt(message.message, Authentication.Token != message.sender) : message.message;
     }
 
     private void SetValues()
     {
         HorizontalOptions = IsIncoming ? LayoutOptions.Start : LayoutOptions.End;
         Frame.BackgroundColor = IsIncoming ? Colors.LightBlue : Colors.Red;
-        if (lastMessageSend != null && sameTimeToMinutes(timeSend, lastMessageSend.Value))
-            TimeLbl.IsEnabled = false;
-        TimeLbl.Text = timeSend.ToString("f");
+        if (lastMessageSend != null &&
+            sameTimeToMinutes(timeSend, lastMessageSend.Value))
+        {
+            TimeLbl.IsVisible = false;
+            return;
+        }
+        if (lastMessageSend != null)
+            TimeLbl.Text = getTimeFirstString(timeSend, lastMessageSend.Value);
     }
+
+    public void SetTimeSend(DateTime timeSend)
+    {
+        this.timeSend = timeSend;
+        SetValues();
+    }
+    public void SetLastMessageSendTime(DateTime? lastMessageSend)
+    {
+        this.lastMessageSend = lastMessageSend;
+        SetValues();
+    }
+
 
     protected override void OnPropertyChanged(string propertyName = null)
     {
@@ -57,6 +88,20 @@ public partial class MessageBubble : ContentView
     {
        return first.Day == second.Day && first.Hour == second.Hour &&
                first.Minute == second.Minute;
+    }
+
+    public bool sameTimeToDay(DateTime first, DateTime second)
+    {
+        return first.Day == second.Day;
+    }
+
+    private string getTimeFirstString(DateTime first, DateTime? second)
+    {
+        if (second == null)
+            return first.ToString("f");
+        if (sameTimeToMinutes(first, second.Value))
+            return "";
+        return first.ToString(sameTimeToDay(first, second.Value) ? "t" : "f");
     }
 }
 

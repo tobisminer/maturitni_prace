@@ -1,5 +1,6 @@
 ﻿using RestSharp;
 using System.Net;
+using Newtonsoft.Json;
 
 namespace ClientMaui.API
 {
@@ -7,23 +8,31 @@ namespace ClientMaui.API
     {
         public string url = url;
 
+        public string username = "";
+
         private readonly RestClient _client = new(url);
+        
 
 
         public async Task<RestResponse> Request(
             string endpoint,
-            string body = "",
+            string? body = null,
             Method method = Method.Get,
-            int id = 0,
+            int? id = null,
             int? from = null,
-            int? to = null)
+            int? to = null
+            )
         {
             var request = new RestRequest(endpoint)
             {
                 Method = method
             };
+            if (Authentication.Token != "")
+            {
+                request.AddHeader("Authorization", "Bearer " + Authentication.Token);
+            }
 
-            if (id != 0)
+            if (id != null)
             {
                 request.Resource += $"/{id}";
             }
@@ -36,12 +45,8 @@ namespace ClientMaui.API
                 request.Resource += $"/{to}";
             }
 
-            if (Authentication.Token != "")
-            {
-                request.AddHeader("Authorization", "Bearer " + Authentication.Token);
-            }
 
-            if (body != "")
+            if (body != null)
             {
                 request.AddParameter("application/json", body, ParameterType.RequestBody);
             }
