@@ -1,7 +1,6 @@
-﻿using System.ComponentModel;
+﻿using Server.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Server.Enums;
 
 namespace Server.Models
 {
@@ -66,6 +65,7 @@ namespace Server.Models
         public int id { get; set; }
         public string? sender { get; set; }
         public string? message { get; set; }
+        public BlockCypherMode? BlockCypherMode { get; set; }
         public DateTime send_at { get; set; }
     }
     public enum BlockCypherMode
@@ -76,7 +76,7 @@ namespace Server.Models
     }
     public class RoomCreation
     {
-        
+
 
         public string name { get; set; }
         public string room_type { get; set; }

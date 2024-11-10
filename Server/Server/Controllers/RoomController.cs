@@ -29,20 +29,20 @@ namespace Server.Controllers
             authorization = Authentication.GetTokenFromHeader(authorization);
             var identification = Authentication.GetIdentifierFromToken(db, authorization);
             var rooms = (from room in db.Rooms.ToList()
-            let canConnect = room.key_person_1 == identification ||
-                             room.key_person_2 == identification ||
-                             room.key_person_1 == null ||
-                             room.key_person_2 == null
-            select new RoomDTO
-            {
-                id = room.id,
-                name = room.name,
-                created_at = room.created_at,
-                RoomType = room.RoomType.ToFriendlyString(),
-                can_connect = canConnect,
-                key_person_1 = room.key_person_1 != null ? "Full" : null,
-                key_person_2 = room.key_person_2 != null ? "Full" : null
-            }).ToList();
+                         let canConnect = room.key_person_1 == identification ||
+                                          room.key_person_2 == identification ||
+                                          room.key_person_1 == null ||
+                                          room.key_person_2 == null
+                         select new RoomDTO
+                         {
+                             id = room.id,
+                             name = room.name,
+                             created_at = room.created_at,
+                             RoomType = room.RoomType.ToFriendlyString(),
+                             can_connect = canConnect,
+                             key_person_1 = room.key_person_1 != null ? "Full" : null,
+                             key_person_2 = room.key_person_2 != null ? "Full" : null
+                         }).ToList();
 
             return Ok(rooms);
         }
@@ -93,7 +93,7 @@ namespace Server.Controllers
             {
                 return Ok(room!.Messages.Count);
             }
-         
+
             if (room!.key_person_1 == null)
             {
                 room.key_person_1 = identification;
@@ -128,17 +128,17 @@ namespace Server.Controllers
                 // If the room is RSA, return the public key of the other person
                 if (identification == room.key_person_1)
                 {
-                    return Ok(room.public_key_person_2); 
+                    return Ok(room.public_key_person_2);
                 }
                 else if (identification == room.key_person_2)
                 {
                     return Ok(room.public_key_person_1);
                 }
-                
+
             }
 
             return Ok(room.cryptography_key);
-        }   
+        }
 
         [HttpPost("setSecretKey/{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -161,7 +161,7 @@ namespace Server.Controllers
                 if (identification == room.key_person_1)
                 {
                     room.public_key_person_1 = key.key;
-                } 
+                }
                 else if (identification == room.key_person_2)
                 {
                     room.public_key_person_2 = key.key;
@@ -187,19 +187,21 @@ namespace Server.Controllers
             {
                 return result;
             }
-            
+
             var messegeForSender = new Message
             {
                 message = message.message,
                 sender = identification,
-                send_at = DateTime.Now
+                send_at = DateTime.Now,
+                BlockCypherMode = room!.BlockCypherMode
 
             };
             var messageForReceiver = new Message
             {
                 message = message.message,
                 sender = null,
-                send_at = DateTime.Now
+                send_at = DateTime.Now,
+                BlockCypherMode = room.BlockCypherMode
             };
 
             room!.Messages.Add(messegeForSender);

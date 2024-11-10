@@ -1,5 +1,4 @@
-﻿using Microsoft.Identity.Client;
-using Server.Data;
+﻿using Server.Data;
 
 namespace Server
 {

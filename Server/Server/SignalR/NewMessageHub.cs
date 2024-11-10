@@ -23,7 +23,7 @@ namespace Server.SignalR
             if (connectionToken.ContainsKey(identifier))
                 connectionToken.Remove(identifier);
             connectionToken.Add(identifier, Context.ConnectionId);
-            
+
             return base.OnConnectedAsync();
         }
     }

@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
-using static System.Net.Mime.MediaTypeNames;
-using System.Text;
-using Azure.Core;
 
 namespace Server.Logging
 {

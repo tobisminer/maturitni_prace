@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using Server.Cryptography;
 using Server.Data;
 using Server.Models;
-using Server.SignalR;
 
 
 namespace Server.Controllers
@@ -31,14 +27,14 @@ namespace Server.Controllers
             var hash = LocalHash.Sha256(register.password);
             var identifier = RandomGenerator.GenerateRandomString();
             var user = new UserLogin
-                {
-                    username = register.username,
-                    passwordHash = hash,
-                    identifier = identifier
-                };
+            {
+                username = register.username,
+                passwordHash = hash,
+                identifier = identifier
+            };
 
-             db.UserLogins.Add(user);
-             db.SaveChanges();
+            db.UserLogins.Add(user);
+            db.SaveChanges();
             return Ok("User registered");
         }
 
@@ -90,7 +86,7 @@ namespace Server.Controllers
             token.created_at = DateTime.Now;
             db.SaveChanges();
             return Ok(token.token);
-           
+
         }
     }
 }

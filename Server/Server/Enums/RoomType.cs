@@ -76,5 +76,5 @@ namespace Server.Enums
         }
 
     }
-  
+
 }

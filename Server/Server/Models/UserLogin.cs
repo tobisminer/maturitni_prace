@@ -5,7 +5,7 @@ namespace Server.Models
 {
     public class UserRegister
     {
-       public string? username { get; set; }
+        public string? username { get; set; }
 
         public string? password { get; set; }
 
