@@ -56,7 +56,8 @@ namespace Server.Controllers
             {
                 name = roomSettings.name,
                 RoomType = type,
-                created_at = DateTime.Now
+                created_at = DateTime.Now,
+                BlockCypherMode = roomSettings.block_cypher_mode
             };
             db.Rooms.Add(room);
             db.SaveChanges();

@@ -21,8 +21,9 @@ namespace Server.Models
         public string name { get; set; }
 
         public ICollection<Message> Messages { get; set; }
-        public RoomType RoomType { get; set; }
 
+        public RoomType RoomType { get; set; }
+        public BlockCypherMode? BlockCypherMode { get; set; }
         public string? cryptography_key { get; set; }
 
         public string? key_person_1 { get; set; }
@@ -45,6 +46,7 @@ namespace Server.Models
         public ICollection<Message> Messages { get; set; }
 
         public string RoomType { get; set; }
+        public BlockCypherMode BlockCypherMode { get; set; }
 
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
@@ -66,10 +68,18 @@ namespace Server.Models
         public string? message { get; set; }
         public DateTime send_at { get; set; }
     }
-
+    public enum BlockCypherMode
+    {
+        ECB,
+        CBC,
+        CFB
+    }
     public class RoomCreation
     {
+        
+
         public string name { get; set; }
         public string room_type { get; set; }
+        public BlockCypherMode? block_cypher_mode { get; set; }
     }
 }

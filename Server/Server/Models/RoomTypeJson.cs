@@ -4,5 +4,6 @@
     {
         public string name { get; set; }
         public bool isSecure { get; set; }
+
     }
 }
