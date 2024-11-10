@@ -1,8 +1,8 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using ClientMaui.API;
+﻿using ClientMaui.API;
 using ClientMaui.Database.Entities;
 using ClientMaui.Entities.Room;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ClientMaui.Cryptography
 {
@@ -13,7 +13,7 @@ namespace ClientMaui.Cryptography
             get => publicKey;
             set => publicKey = value;
         } // This is the string public key
-        
+
         private string publicKey { get; set; }
         private string privateKey { get; set; }
 
@@ -26,14 +26,14 @@ namespace ClientMaui.Cryptography
         {
             var csp = new RSACryptoServiceProvider(2048);
 
-            
+
             publicKey = csp.ToXmlString(false);
             privateKey = csp.ToXmlString(true);
 
             _ = Database.Database.AddValueToSecureStorage("PublicKey", publicKey,
                 room.id);
             _ = Database.Database.AddValueToSecureStorage("PrivateKey", privateKey, room.id);
-           
+
             return key;
         }
 
@@ -52,7 +52,7 @@ namespace ClientMaui.Cryptography
 
             return true;
         }
-        
+
         public async Task<bool> GetOtherPublicKey()
         {
             var otherPublicKeyServer = (await endpoint.Request(APIEndpoints.RoomEndpoints.GetKey, id: room.id)).Content;
@@ -78,7 +78,7 @@ namespace ClientMaui.Cryptography
             return Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
-        public async Task<string> Encrypt(string text)
+        public async Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
             if (otherPublicKey == null)
             {
@@ -93,8 +93,8 @@ namespace ClientMaui.Cryptography
             var cypherString = Convert.ToBase64String(cypher);
             var mess = new MessageDbEntity
             {
-               Message = EncryptByMyPublicKey(text),
-               EncryptedMessage = cypherString
+                Message = EncryptByMyPublicKey(text),
+                EncryptedMessage = cypherString
             };
             Database.Database.AddMessage(mess);
             return cypherString;
@@ -109,7 +109,7 @@ namespace ClientMaui.Cryptography
             return Convert.ToBase64String(cypher);
         }
 
-        public async Task<string> Decrypt(string text, bool isIncoming = false)
+        public async Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
             if (!isIncoming)
             {
@@ -130,7 +130,7 @@ namespace ClientMaui.Cryptography
                 throw new Exception("Decryption failed. Key might not exist or be invalid.", ex);
             }
         }
-        
+
     }
-   
+
 }

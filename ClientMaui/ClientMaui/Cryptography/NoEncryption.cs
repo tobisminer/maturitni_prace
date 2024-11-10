@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ClientMaui.Entities.Room;
 
 namespace ClientMaui.Cryptography
 {
@@ -15,12 +11,12 @@ namespace ClientMaui.Cryptography
             return "";
         }
 
-        public Task<string> Encrypt(string text)
+        public Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
             return Task.FromResult(text);
         }
 
-        public Task<string> Decrypt(string text, bool isIncoming = false)
+        public Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
             return Task.FromResult(text);
         }

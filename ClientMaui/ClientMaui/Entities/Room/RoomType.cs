@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ClientMaui.Entities.Room
+﻿namespace ClientMaui.Entities.Room
 {
     public class RoomType
     {

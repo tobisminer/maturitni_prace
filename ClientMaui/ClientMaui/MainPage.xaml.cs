@@ -1,6 +1,6 @@
 ﻿using ClientMaui.API;
-using System.Net;
 using ClientMaui.Pages;
+using System.Net;
 using static ClientMaui.API.APIEndpoints;
 
 namespace ClientMaui

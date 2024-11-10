@@ -1,5 +1,4 @@
 ﻿using ClientMaui.Database.Entities;
-using ClientMaui.Entities.Room;
 using SQLite;
 
 namespace ClientMaui.Database

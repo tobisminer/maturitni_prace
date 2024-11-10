@@ -1,5 +1,5 @@
-﻿using System.Security.Cryptography;
-using static System.Net.Mime.MediaTypeNames;
+﻿using ClientMaui.Entities.Room;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace ClientMaui.Cryptography
@@ -9,8 +9,8 @@ namespace ClientMaui.Cryptography
 
         public string GenerateKey();
         public string key { get; set; }
-        public Task<string> Encrypt(string text);
-        public Task<string> Decrypt(string text, bool isIncoming = false);
+        public Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None);
+        public Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false);
     }
 
     public class CryptographyHelper
@@ -30,10 +30,30 @@ namespace ClientMaui.Cryptography
             };
 
         }
+        public static bool BlockCypherMode(string friendlyString)
+        {
+            return friendlyString switch
+            {
+                "No Encryption" => false,
+                "DES" => true,
+                "AES" => true,
+                "Triple DES" => true,
+                "RC4" => false,
+                "RSA" => false,
+                "RSA+AES" => false,
+                _ => false
+            };
+        }
 
-        public static async Task<string> EncryptBySymmetric(ICryptoTransform transform, string message)
+        public static (byte[], string) DivideMessage(string message)
+        {
+            var split = message.Split("|");
+            return (Convert.FromBase64String(split[0]), split[1]);
+        }
+        public static async Task<string> EncryptSymmetric(ICryptoTransform transform, string message, byte[] IV)
         {
             var messageBytes = Encoding.UTF8.GetBytes(message);
+            var IVString = Convert.ToBase64String(IV);
             var mode = CryptoStreamMode.Write;
 
             // Set up streams and encrypt
@@ -49,10 +69,10 @@ namespace ClientMaui.Cryptography
 
             // Encode the encrypted message as base64 string
             var encryptedMessage = Convert.ToBase64String(encryptedMessageBytes);
-            return encryptedMessage;
+            return $"{IVString}|{encryptedMessage}";
 
         }
-        public static async Task<string> DecryptBySymmetric(ICryptoTransform transform, string encryptedMessage)
+        public static async Task<string> DecryptSymmetric(ICryptoTransform transform, string encryptedMessage)
         {
             var encryptedMessageBytes = Convert.FromBase64String(encryptedMessage);
             var mode = CryptoStreamMode.Write;

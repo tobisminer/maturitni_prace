@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Runtime.InteropServices.JavaScript;
-using ClientMaui.API;
 using ClientMaui.Cryptography;
 using ClientMaui.Entities.Room;
 
@@ -42,13 +39,13 @@ public partial class MessageBubble : ContentView
         this.message = message;
         MessageText = message.message;
         timeSend = message.send_at;
-        IsIncoming =  message.sender == null;
+        IsIncoming = message.sender == null;
         SetValues();
     }
 
     public async void setMessageDecryptStatus(ICryptography? cypher, bool decrypt = true)
     {
-        MessageText = decrypt && cypher != null ? await cypher.Decrypt(message.message, message.sender == null) : message.message;
+        MessageText = decrypt && cypher != null ? await cypher.Decrypt(message.message, message.BlockCypherMode ?? BlockCypherMode.None, message.sender == null) : message.message;
     }
 
     private void SetValues()
@@ -86,8 +83,8 @@ public partial class MessageBubble : ContentView
 
     public bool sameTimeToMinutes(DateTime first, DateTime second)
     {
-       return first.Day == second.Day && first.Hour == second.Hour &&
-               first.Minute == second.Minute;
+        return first.Day == second.Day && first.Hour == second.Hour &&
+                first.Minute == second.Minute;
     }
 
     public bool sameTimeToDay(DateTime first, DateTime second)

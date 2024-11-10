@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using ClientMaui.Entities.Room;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ClientMaui.Cryptography
 {
@@ -37,7 +34,7 @@ namespace ClientMaui.Cryptography
 
         }
 
-        public Task<string> Encrypt(string text)
+        public Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
             var messageBytes = Encoding.UTF8.GetBytes(text);
             var passwordBytes = Encoding.UTF8.GetBytes(key);
@@ -48,7 +45,7 @@ namespace ClientMaui.Cryptography
             return Task.FromResult(encryptedMessage);
         }
 
-        public Task<string> Decrypt(string text, bool isIncoming = false)
+        public Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
             var encryptedMessageBytes = Convert.FromBase64String(text);
             var passwordBytes = Encoding.UTF8.GetBytes(key);
@@ -62,7 +59,7 @@ namespace ClientMaui.Cryptography
         public static byte[] Apply(byte[] data, byte[] key)
         {
             var S = Enumerable.Range(0, 256).ToArray();
-            
+
             int i;
             var j = 0;
             for (i = 0; i < 256; i++)
@@ -74,11 +71,11 @@ namespace ClientMaui.Cryptography
             i = j = 0;
             var result = new byte[data.Length];
             for (var iteration = 0; iteration < data.Length; iteration++)
-            { 
+            {
                 i = (i + 1) % 256;
                 j = (j + S[i]) % 256;
                 (S[i], S[j]) = (S[j], S[i]);
-              
+
                 var keystream = S[(S[i] + S[j]) % 256];
 
                 result[iteration] = Convert.ToByte(data[iteration] ^ keystream);

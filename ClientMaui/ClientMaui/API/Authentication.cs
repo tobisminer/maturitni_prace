@@ -35,7 +35,7 @@ namespace ClientMaui.API
             endpoint.username = username;
             return true;
         }
-       
+
 
 
 

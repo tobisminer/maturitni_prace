@@ -1,6 +1,5 @@
 ﻿using RestSharp;
 using System.Net;
-using Newtonsoft.Json;
 
 namespace ClientMaui.API
 {
@@ -11,7 +10,7 @@ namespace ClientMaui.API
         public string username = "";
 
         private readonly RestClient _client = new(url);
-        
+
 
 
         public async Task<RestResponse> Request(
@@ -36,7 +35,7 @@ namespace ClientMaui.API
             {
                 request.Resource += $"/{id}";
             }
-            if(from != null)
+            if (from != null)
             {
                 request.Resource += $"/{from}";
             }

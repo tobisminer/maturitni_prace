@@ -1,4 +1,6 @@
-﻿namespace ClientMaui.Cryptography
+﻿using ClientMaui.Entities.Room;
+
+namespace ClientMaui.Cryptography
 {
     internal class RSAandAES : ICryptography
     {
@@ -25,7 +27,7 @@
             return aes.key;
         }
 
-        public async Task<string> Encrypt(string text)
+        public async Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
             GenerateAESKey();
             var encryptedText = await aes.Encrypt(text);
@@ -33,10 +35,10 @@
             return $"{encryptedKey}|{encryptedText}";
         }
 
-        public async Task<string> Decrypt(string text, bool isIncoming = false)
+        public async Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
             var split = text.Split('|');
-            var decryptedKey = await rsa.Decrypt(split[0], isIncoming);
+            var decryptedKey = await rsa.Decrypt(split[0], mode, isIncoming);
             aes.key = decryptedKey;
             return await aes.Decrypt(split[1]);
         }

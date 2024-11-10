@@ -10,8 +10,9 @@
                        Text="Room Creation"
                        VerticalOptions="Center"  HorizontalOptions="Center"/>
                 <Entry  VerticalOptions="Center" x:Name="RoomNameEntry" Placeholder="Room name" Margin="10,0,10,0"></Entry>
-                <Picker x:Name="RoomTypePicker" VerticalOptions="Center" Title="Select room encryption"></Picker>
-                <Button  x:Name="CreateBtn" Text="Vytvořit" Clicked="CreateBtn_OnClicked" HorizontalOptions="Center" Margin="20,20,20,0"></Button>
+                <Picker x:Name="RoomTypePicker" VerticalOptions="Center" Title="Vyberte šifrování místnosti" SelectedIndexChanged="RoomTypePicker_OnSelectedIndexChanged"></Picker>
+                <Picker x:Name="BlockCypherModePicker" VerticalOptions="Center" Title="Vyberte mód šifrování"></Picker>
+            <Button  x:Name="CreateBtn" Text="Vytvořit" Clicked="CreateBtn_OnClicked" HorizontalOptions="Center" Margin="20,20,20,0"></Button>
         </VerticalStackLayout>
            
 

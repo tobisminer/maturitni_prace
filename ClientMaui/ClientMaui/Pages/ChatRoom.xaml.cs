@@ -1,4 +1,6 @@
 ﻿using ClientMaui.API;
+using ClientMaui.Cryptography;
+using ClientMaui.Entities;
 using ClientMaui.Entities.Room;
 using ClientMaui.Widgets;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -7,9 +9,6 @@ using RestSharp;
 using SharpHook;
 using SharpHook.Native;
 using System.Net;
-using System.Security.Cryptography;
-using ClientMaui.Cryptography;
-using ClientMaui.Entities;
 
 namespace ClientMaui;
 public partial class ChatRoom : ContentPage
@@ -22,12 +21,12 @@ public partial class ChatRoom : ContentPage
     private TaskPoolGlobalHook hook;
 
     private ICryptography? cypher;
-    
+
     private readonly int oldMessageToLoadCount = 20;
     private int lastMessageCount = 0;
     private int? messageCount = null;
     private bool decryptMessages = true;
-    
+
     public ChatRoom(Endpoint endpoint, Room room)
     {
         InitializeComponent();
@@ -38,7 +37,7 @@ public partial class ChatRoom : ContentPage
         hook = new TaskPoolGlobalHook();
         hook.KeyPressed += KeyPressed;
         hook.RunAsync();
-       
+
 
     }
 
@@ -212,26 +211,22 @@ public partial class ChatRoom : ContentPage
     }
 
 
-    private async Task<string> EncryptMessage(string message)
+    private async Task<string> EncryptMessage(string message, BlockCypherMode mode)
     {
-        return cypher == null ? message : await cypher.Encrypt(message);
+        return cypher == null ? message : await cypher.Encrypt(message, mode);
     }
-    private async Task<string> DecryptMessage(string message)
-    {
-        return cypher == null ? message : await cypher.Decrypt(message);
-    }
-
 
     private async void SendButton_OnClicked(object? sender, EventArgs e)
     {
         var message = MessageEntry.Text;
-        if(string.IsNullOrWhiteSpace(message))
+        if (string.IsNullOrWhiteSpace(message))
             return;
         MessageEntry.Text = "";
         Message messageObject = new()
         {
-            message = await EncryptMessage(message),
-            sender = Authentication.Token
+            message = await EncryptMessage(message, room.BlockCypherMode ?? BlockCypherMode.None),
+            sender = Authentication.Token,
+            BlockCypherMode = room.BlockCypherMode
         };
         var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id);
 
@@ -249,7 +244,7 @@ public partial class ChatRoom : ContentPage
 
     private async void LoadOldMessages()
     {
-        var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id, from: lastMessageCount, to: lastMessageCount  + oldMessageToLoadCount);
+        var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id, from: lastMessageCount, to: lastMessageCount + oldMessageToLoadCount);
         lastMessageCount += oldMessageToLoadCount;
         if (messages.StatusCode != HttpStatusCode.OK)
         {
@@ -277,7 +272,7 @@ public partial class ChatRoom : ContentPage
 
     private void ScrollView_OnScrolled(object? sender, ScrolledEventArgs e)
     {
-        if(e.ScrollY == 0 && messageCount > lastMessageCount)
+        if (e.ScrollY == 0 && messageCount > lastMessageCount)
         {
             LoadOldMessages();
         }
