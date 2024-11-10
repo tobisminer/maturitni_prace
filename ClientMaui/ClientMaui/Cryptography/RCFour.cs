@@ -14,7 +14,7 @@ namespace ClientMaui.Cryptography
 
         private static readonly char[] _base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".ToCharArray();
 
-        public static string GenerateRandomString(int length = 128)
+        public static string GenerateRandomString(int length = 256)
         {
             var randomData = new byte[length];
 
@@ -79,9 +79,9 @@ namespace ClientMaui.Cryptography
                 j = (j + S[i]) % 256;
                 (S[i], S[j]) = (S[j], S[i]);
               
-                var K = S[(S[i] + S[j]) % 256];
+                var keystream = S[(S[i] + S[j]) % 256];
 
-                result[iteration] = Convert.ToByte(data[iteration] ^ K);
+                result[iteration] = Convert.ToByte(data[iteration] ^ keystream);
             }
 
             //  return the result

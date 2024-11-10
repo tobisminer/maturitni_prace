@@ -46,23 +46,6 @@ namespace Server.Controllers
 
             return Ok(rooms);
         }
-        [HttpDelete("delete/{id:int}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> Delete(int id)
-        {
-            //TODO: Add authentication
-            var result = Validate(id);
-            if (result != null)
-            {
-                return result;
-            }
-
-            db.Rooms.Remove(db.Rooms.Find(id)!);
-            db.SaveChanges();
-            return Ok("Deleted");
-        }
 
         [HttpPost("create")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -109,7 +92,6 @@ namespace Server.Controllers
             {
                 return Ok(room!.Messages.Count);
             }
-            
          
             if (room!.key_person_1 == null)
             {
@@ -140,14 +122,18 @@ namespace Server.Controllers
                 return result;
             }
 
-            if (room.RoomType == RoomType.RSA)
+            if (room.RoomType.isAsymmetric())
             {
                 // If the room is RSA, return the public key of the other person
-                if (authorization == room.key_person_1)
+                if (identification == room.key_person_1)
                 {
                     return Ok(room.public_key_person_2); 
                 }
-                return Ok(room.public_key_person_1);
+                else if (identification == room.key_person_2)
+                {
+                    return Ok(room.public_key_person_1);
+                }
+                
             }
 
             return Ok(room.cryptography_key);
@@ -169,13 +155,13 @@ namespace Server.Controllers
                 return result;
             }
 
-            if (room.RoomType == RoomType.RSA)
+            if (room.RoomType.isAsymmetric())
             {
                 if (identification == room.key_person_1)
                 {
                     room.public_key_person_1 = key.key;
-                }
-                else
+                } 
+                else if (identification == room.key_person_2)
                 {
                     room.public_key_person_2 = key.key;
                 }
@@ -201,24 +187,33 @@ namespace Server.Controllers
                 return result;
             }
             
-            var messageObject = new Message
+            var messegeForSender = new Message
             {
                 message = message.message,
-                sender = authorization,
+                sender = identification,
+                send_at = DateTime.Now
+
+            };
+            var messageForReceiver = new Message
+            {
+                message = message.message,
+                sender = null,
                 send_at = DateTime.Now
             };
 
-            room!.Messages.Add(messageObject);
+            room!.Messages.Add(messegeForSender);
 
             db.SaveChanges();
 
             //convert messageObject to string variable
 
-            var messageString = JsonConvert.SerializeObject(messageObject);
-            newMessageHub.SendToUser(room.key_person_1, messageString);
-            newMessageHub.SendToUser(room.key_person_2, messageString);
+            var stringForSender = JsonConvert.SerializeObject(messegeForSender);
+            var stringForReceiver = JsonConvert.SerializeObject(messageForReceiver);
+            newMessageHub.SendToUser(room.key_person_1, room.key_person_1 == identification ? stringForSender : stringForReceiver);
+            newMessageHub.SendToUser(room.key_person_2, room.key_person_2 == identification ? stringForSender : stringForReceiver);
             return Ok("Message sent");
         }
+
 
         [HttpGet("messageList/{id:int}/{from:int}/{to:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -241,12 +236,20 @@ namespace Server.Controllers
             {
                 return BadRequest("Invalid range");
             }
+            var messages = room!.Messages.Skip(from).Take(to - from).ToList();
+            //remove identification from messages that are not from the user
+            foreach (var message in messages.Where(message => message.sender != identification))
+            {
+                message.sender = null;
+            }
 
-            return Ok(room!.Messages.Skip(from).Take(to - from).ToList());
+            return Ok(messages);
         }
-
         private ActionResult? Validate(int? roomId = null, string? identification = null, bool checkIdentification = false, bool checkRoomIdentification = false)
         {
+            //Tato metoda kontroluje zda je vše v pořádku a v případě že není, vrátí chybovou hlášku, která
+            //je pak vrácen klientovi
+
             if (roomId is < 0)
             {
                 return BadRequest("Invalid ID");

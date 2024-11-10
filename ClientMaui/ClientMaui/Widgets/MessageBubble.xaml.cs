@@ -42,13 +42,13 @@ public partial class MessageBubble : ContentView
         this.message = message;
         MessageText = message.message;
         timeSend = message.send_at;
-        IsIncoming = Authentication.Token != message.sender;
+        IsIncoming =  message.sender == null;
         SetValues();
     }
 
     public async void setMessageDecryptStatus(ICryptography? cypher, bool decrypt = true)
     {
-        MessageText = decrypt && cypher != null ? await cypher.Decrypt(message.message, Authentication.Token != message.sender) : message.message;
+        MessageText = decrypt && cypher != null ? await cypher.Decrypt(message.message, message.sender == null) : message.message;
     }
 
     private void SetValues()

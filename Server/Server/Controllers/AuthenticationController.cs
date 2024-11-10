@@ -18,6 +18,7 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<string> Register(UserRegister register)
         {
+            //Zkrontrolování vstupu
             if (register.username == null || register.password == null)
             {
                 return BadRequest("Invalid input");
@@ -26,7 +27,7 @@ namespace Server.Controllers
             {
                 return BadRequest("Username already exists");
             }
-
+            //Převod na hash, pro bezpečné uložení
             var hash = LocalHash.Sha256(register.password);
             var identifier = RandomGenerator.GenerateRandomString();
             var user = new UserLogin
@@ -45,22 +46,25 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<string> Login(UserRegister login)
         {
+            //Zkontrolování vstupu
             if (login.username == null || login.password == null)
             {
                 return BadRequest("Invalid input");
             }
+            //Převod na hash, abychom mohli porovnat s uloženým
             var hash = LocalHash.Sha256(login.password);
             var user = db.UserLogins.FirstOrDefault(user => user.username == login.username && user.passwordHash == hash);
             if (user == null)
             {
                 return BadRequest("Invalid credentials");
             }
-            //Check if user is already logged in
+            //Kontrola jestli uživatel už nemá vystavený platný token
             var token = db.Tokens.FirstOrDefault(token => token.identifier == user.identifier)?.token;
             if (token != null)
             {
                 return Ok(token);
             }
+            //Generace nového tokenu
             token = RandomGenerator.GenerateRandomString();
             var tokenModel = new Token
             {

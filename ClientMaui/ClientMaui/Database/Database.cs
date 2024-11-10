@@ -22,12 +22,37 @@ namespace ClientMaui.Database
         public static async void AddMessage(MessageDbEntity message)
         {
             await Init();
+
             await database!.InsertAsync(message);
         }
         public static async Task<MessageDbEntity?> GetMessagesByEncryptedString(string encrypted)
         {
             await Init();
             return await database!.Table<MessageDbEntity>().Where(x => x.EncryptedMessage == encrypted).FirstOrDefaultAsync();
+        }
+
+        public static string getPrefix(int? roomId)
+        {
+            var list = new List<string>();
+            var username = Preferences.Default.Get("Username", "");
+            var ipAddress = Preferences.Default.Get("IPAddress", "");
+            if (roomId != null)
+            {
+                list.Add(roomId.ToString());
+            }
+            list.Add(username);
+            list.Add(ipAddress);
+            return string.Join("_", list);
+
+        }
+        public static async Task AddValueToSecureStorage(string key, string value, int? roomId = null)
+        {
+            await SecureStorage.SetAsync(getPrefix(roomId) + key, value);
+        }
+
+        public static async Task<string?> GetValueFromSecureStorage(string key, int? roomId = null)
+        {
+            return await SecureStorage.GetAsync(getPrefix(roomId) + key);
         }
 
 

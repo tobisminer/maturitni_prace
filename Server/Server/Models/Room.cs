@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Server.Enums;
 
@@ -64,17 +65,6 @@ namespace Server.Models
         public string? sender { get; set; }
         public string? message { get; set; }
         public DateTime send_at { get; set; }
-
-    }
-
-    public class MessageDTO
-    {
-        public int id { get; set; }
-        public string? sender { get; set; }
-        public string? message { get; set; }
-        public DateTime send_at { get; set; }
-        public int RoomId { get; set; }
-        public Room Room { get; set; }
     }
 
     public class RoomCreation

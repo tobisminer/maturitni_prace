@@ -10,7 +10,8 @@ namespace Server.Enums
         TRIPLE_DES,
         AES,
         ARCFOUR,
-        RSA
+        RSA,
+        RSA_AES
     }
 
     public static class RoomTypesExtensions
@@ -25,6 +26,7 @@ namespace Server.Enums
                 RoomType.TRIPLE_DES => "Triple DES",
                 RoomType.ARCFOUR => "RC4",
                 RoomType.RSA => "RSA",
+                RoomType.RSA_AES => "RSA+AES",
                 _ => "Unknown"
             };
         }
@@ -38,6 +40,7 @@ namespace Server.Enums
                 "Triple DES" => RoomType.TRIPLE_DES,
                 "RC4" => RoomType.ARCFOUR,
                 "RSA" => RoomType.RSA,
+                "RSA+AES" => RoomType.RSA_AES,
                 _ => RoomType.NoEncryption
             };
         }
@@ -51,6 +54,16 @@ namespace Server.Enums
                 RoomType.TRIPLE_DES => false,
                 RoomType.ARCFOUR => false,
                 RoomType.RSA => true,
+                RoomType.RSA_AES => true,
+                _ => false
+            };
+        }
+        public static bool isAsymmetric(this RoomType me)
+        {
+            return me switch
+            {
+                RoomType.RSA => true,
+                RoomType.RSA_AES => true,
                 _ => false
             };
         }

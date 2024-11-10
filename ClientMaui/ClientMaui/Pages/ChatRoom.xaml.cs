@@ -149,8 +149,7 @@ public partial class ChatRoom : ContentPage
             RSAInstance.room = room;
             _ = await RSAInstance.GetOtherPublicKey();
 
-
-            if (RSAInstance.LoadKey()) return;
+            if (await RSAInstance.LoadKey()) return;
             var myNewPublicKey = RSAInstance.GenerateKey();
             var myPublicKeyJson = new Key
             {
@@ -159,6 +158,24 @@ public partial class ChatRoom : ContentPage
             await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
             return;
 
+        }
+
+        if (cypher.GetType() == typeof(RSAandAES))
+        {
+            var instance = (RSAandAES)cypher;
+            var rsa = instance.rsa;
+            rsa.endpoint = endpoint;
+            rsa.room = room;
+            _ = await rsa.GetOtherPublicKey();
+
+            if (await rsa.LoadKey()) return;
+            var myNewPublicKey = rsa.GenerateKey();
+            var myPublicKeyJson = new Key
+            {
+                key = RSAInstance.Base64Encode(myNewPublicKey)
+            };
+            await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
+            return;
         }
 
 

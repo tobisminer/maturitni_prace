@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using ClientMaui.API;
-using ClientMaui.Database;
 using ClientMaui.Database.Entities;
 using ClientMaui.Entities.Room;
 
@@ -35,17 +29,18 @@ namespace ClientMaui.Cryptography
             
             publicKey = csp.ToXmlString(false);
             privateKey = csp.ToXmlString(true);
-           
-            Preferences.Default.Set(room.id + endpoint.username +  "PUBLIC", publicKey);
-            Preferences.Default.Set(room.id + endpoint.username + "PRIVATE", privateKey);
 
+            _ = Database.Database.AddValueToSecureStorage("PublicKey", publicKey,
+                room.id);
+            _ = Database.Database.AddValueToSecureStorage("PrivateKey", privateKey, room.id);
+           
             return key;
         }
 
-        public bool LoadKey()
+        public async Task<bool> LoadKey()
         {
-            var publicKeyString = Preferences.Default.Get(room.id + endpoint.username + "PUBLIC", "");
-            var privateKeyString = Preferences.Default.Get(room.id + endpoint.username + "PRIVATE", "");
+            var publicKeyString = await Database.Database.GetValueFromSecureStorage("PublicKey", room.id);
+            var privateKeyString = await Database.Database.GetValueFromSecureStorage("PrivateKey", room.id);
 
             if (string.IsNullOrEmpty(publicKeyString) || string.IsNullOrEmpty(privateKeyString))
             {
@@ -98,11 +93,20 @@ namespace ClientMaui.Cryptography
             var cypherString = Convert.ToBase64String(cypher);
             var mess = new MessageDbEntity
             {
-               Message = text,
+               Message = EncryptByMyPublicKey(text),
                EncryptedMessage = cypherString
             };
             Database.Database.AddMessage(mess);
             return cypherString;
+        }
+
+        private string EncryptByMyPublicKey(string text)
+        {
+            var csp = new RSACryptoServiceProvider();
+            csp.FromXmlString(publicKey);
+            var data = Encoding.UTF8.GetBytes(text);
+            var cypher = csp.Encrypt(data, false);
+            return Convert.ToBase64String(cypher);
         }
 
         public async Task<string> Decrypt(string text, bool isIncoming = false)
@@ -110,14 +114,8 @@ namespace ClientMaui.Cryptography
             if (!isIncoming)
             {
                 var mess = await Database.Database.GetMessagesByEncryptedString(text);
-                return mess?.Message ?? text;
+                text = mess?.Message ?? text;
             }
-
-            if (publicKey == otherPublicKey)
-            {
-                Console.WriteLine("What");
-            }
-
             try
             {
                 var csp = new RSACryptoServiceProvider();
@@ -132,6 +130,7 @@ namespace ClientMaui.Cryptography
                 throw new Exception("Decryption failed. Key might not exist or be invalid.", ex);
             }
         }
+        
     }
    
 }

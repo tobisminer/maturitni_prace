@@ -32,6 +32,8 @@ public partial class LoginPage : ContentPage
         var result = await _authentication.Login(UsernameEntry.Text, PasswordEntry.Text);
         if (result)
         {
+            await SecureStorage.SetAsync("password", PasswordEntry.Text);
+
             await Navigation.PushAsync(new RoomSelect(_endpoint));
         }
         else
