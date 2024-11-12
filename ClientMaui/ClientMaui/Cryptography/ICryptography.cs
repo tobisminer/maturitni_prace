@@ -50,6 +50,27 @@ namespace ClientMaui.Cryptography
             var split = message.Split("|");
             return (Convert.FromBase64String(split[0]), split[1]);
         }
+        public static ICryptoTransform CreateSymmetricEncryptor(dynamic cypher, string key, byte[] IV, BlockCypherMode mode)
+        {
+            var passwordBytes = Convert.FromBase64String(key);
+
+            // Set encryption settings
+            cypher.Padding = PaddingMode.PKCS7;
+            cypher.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
+            return cypher.CreateEncryptor(passwordBytes, IV);
+
+        }
+        public static ICryptoTransform CreateSymmetricDecryptor(dynamic cypher, string key, byte[] IV, BlockCypherMode mode)
+        {
+            var passwordBytes = Convert.FromBase64String(key);
+
+            // Set encryption settings
+            cypher.Padding = PaddingMode.PKCS7;
+            cypher.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
+            return cypher.CreateDecryptor(passwordBytes, IV);
+
+        }
+
         public static async Task<string> EncryptSymmetric(ICryptoTransform transform, string message, byte[] IV)
         {
             var messageBytes = Encoding.UTF8.GetBytes(message);

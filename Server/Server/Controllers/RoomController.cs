@@ -39,6 +39,7 @@ namespace Server.Controllers
                              name = room.name,
                              created_at = room.created_at,
                              RoomType = room.RoomType.ToFriendlyString(),
+                             BlockCypherMode = room.BlockCypherMode,
                              can_connect = canConnect,
                              key_person_1 = room.key_person_1 != null ? "Full" : null,
                              key_person_2 = room.key_person_2 != null ? "Full" : null

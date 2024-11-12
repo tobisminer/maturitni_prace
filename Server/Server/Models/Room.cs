@@ -45,7 +45,7 @@ namespace Server.Models
         public ICollection<Message> Messages { get; set; }
 
         public string RoomType { get; set; }
-        public BlockCypherMode BlockCypherMode { get; set; }
+        public BlockCypherMode? BlockCypherMode { get; set; }
 
         public string? key_person_1 { get; set; }
         public string? key_person_2 { get; set; }
