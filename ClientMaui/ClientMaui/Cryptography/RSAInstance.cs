@@ -1,8 +1,11 @@
 ﻿using ClientMaui.API;
 using ClientMaui.Database.Entities;
 using ClientMaui.Entities.Room;
+using Newtonsoft.Json;
+using RestSharp;
 using System.Security.Cryptography;
 using System.Text;
+using ClientMaui.Entities;
 
 namespace ClientMaui.Cryptography
 {
@@ -78,6 +81,15 @@ namespace ClientMaui.Cryptography
             return Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
+        private string EncryptByMyPublicKey(string text)
+        {
+            var csp = new RSACryptoServiceProvider();
+            csp.FromXmlString(publicKey);
+            var data = Encoding.UTF8.GetBytes(text);
+            var cypher = csp.Encrypt(data, false);
+            return Convert.ToBase64String(cypher);
+        }
+
         public async Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
             if (otherPublicKey == null)
@@ -100,15 +112,6 @@ namespace ClientMaui.Cryptography
             return cypherString;
         }
 
-        private string EncryptByMyPublicKey(string text)
-        {
-            var csp = new RSACryptoServiceProvider();
-            csp.FromXmlString(publicKey);
-            var data = Encoding.UTF8.GetBytes(text);
-            var cypher = csp.Encrypt(data, false);
-            return Convert.ToBase64String(cypher);
-        }
-
         public async Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
             if (!isIncoming)
@@ -116,6 +119,7 @@ namespace ClientMaui.Cryptography
                 var mess = await Database.Database.GetMessagesByEncryptedString(text);
                 text = mess?.Message ?? text;
             }
+
             try
             {
                 var csp = new RSACryptoServiceProvider();
@@ -124,11 +128,29 @@ namespace ClientMaui.Cryptography
                 var plainText = csp.Decrypt(dataBytes, false);
                 return Encoding.UTF8.GetString(plainText);
             }
-            catch (CryptographicException ex)
+            catch (Exception ex)
             {
                 // Log or handle the exception as needed
-                throw new Exception("Decryption failed. Key might not exist or be invalid.", ex);
+                //throw new Exception("Decryption failed. Key might not exist or be invalid.", ex);
             }
+            return text;
+        }
+
+        public static async Task setupForRSA(Endpoint endpoint,
+            Room room,
+            RSAInstance rsaInstance)
+        {
+            rsaInstance.endpoint = endpoint;
+            rsaInstance.room = room;
+            _ = await rsaInstance.GetOtherPublicKey();
+
+            if (await rsaInstance.LoadKey()) return;
+            var myNewPublicKey = rsaInstance.GenerateKey();
+            var myPublicKeyJson = new Key
+            {
+                key = Base64Encode(myNewPublicKey)
+            };
+            await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
         }
 
     }

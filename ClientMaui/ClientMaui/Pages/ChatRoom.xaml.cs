@@ -9,6 +9,7 @@ using RestSharp;
 using SharpHook;
 using SharpHook.Native;
 using System.Net;
+using System.Security.Cryptography;
 
 namespace ClientMaui;
 public partial class ChatRoom : ContentPage
@@ -144,6 +145,9 @@ public partial class ChatRoom : ContentPage
         if (cypher.GetType() == typeof(RSAInstance))
         {
             var RSAInstance = (RSAInstance)cypher;
+            await RSAInstance.setupForRSA(endpoint, room, RSAInstance);
+            return;
+
             RSAInstance.endpoint = endpoint;
             RSAInstance.room = room;
             _ = await RSAInstance.GetOtherPublicKey();
@@ -163,18 +167,10 @@ public partial class ChatRoom : ContentPage
         {
             var instance = (RSAandAES)cypher;
             var rsa = instance.rsa;
-            rsa.endpoint = endpoint;
-            rsa.room = room;
-            _ = await rsa.GetOtherPublicKey();
-
-            if (await rsa.LoadKey()) return;
-            var myNewPublicKey = rsa.GenerateKey();
-            var myPublicKeyJson = new Key
-            {
-                key = RSAInstance.Base64Encode(myNewPublicKey)
-            };
-            await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
+            await RSAInstance.setupForRSA(endpoint, room, rsa);
             return;
+
+
         }
 
 

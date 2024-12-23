@@ -213,8 +213,11 @@ namespace Server.Controllers
 
             var stringForSender = JsonConvert.SerializeObject(messegeForSender);
             var stringForReceiver = JsonConvert.SerializeObject(messageForReceiver);
+
+            //pomocí SignalR poslat zprávu oběma uživatelům
             newMessageHub.SendToUser(room.key_person_1, room.key_person_1 == identification ? stringForSender : stringForReceiver);
             newMessageHub.SendToUser(room.key_person_2, room.key_person_2 == identification ? stringForSender : stringForReceiver);
+
             return Ok("Message sent");
         }
 
@@ -226,6 +229,7 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<List<Message>> GetMessages(int id, int from, int to, [FromHeader] string authorization)
         {
+            //Musíme přidat i zprávy, jelikož se nachází v jiné tabulce a nejsou načteny automaticky
             var room = db.Rooms.Include(room => room.Messages).FirstOrDefault(room => room.id == id);
             authorization = Authentication.GetTokenFromHeader(authorization);
             var identification =
@@ -251,7 +255,7 @@ namespace Server.Controllers
         }
         private ActionResult? Validate(int? roomId = null, string? identification = null, bool checkIdentification = false, bool checkRoomIdentification = false)
         {
-            //Tato metoda kontroluje zda je vše v pořádku a v případě že není, vrátí chybovou hlášku, která
+            //Tato metoda kontroluje zda je vše v pořádku a v případě že není, vrátí danou chybovou hlášku, která
             //je pak vrácen klientovi
 
             if (roomId is < 0)
