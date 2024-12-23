@@ -30,10 +30,9 @@ namespace ClientMaui.Database
             return await database!.Table<MessageDbEntity>().Where(x => x.EncryptedMessage == encrypted).FirstOrDefaultAsync();
         }
 
-        public static string getPrefix(int? roomId)
+        public static string getPrefix(int? roomId, string username)
         {
             var list = new List<string>();
-            var username = Preferences.Default.Get("Username", "");
             var ipAddress = Preferences.Default.Get("IPAddress", "");
             if (roomId != null)
             {
@@ -44,14 +43,14 @@ namespace ClientMaui.Database
             return string.Join("_", list);
 
         }
-        public static async Task AddValueToSecureStorage(string key, string value, int? roomId = null)
+        public static async Task AddValueToSecureStorage(string key, string value, string username, int? roomId = null)
         {
-            await SecureStorage.SetAsync(getPrefix(roomId) + key, value);
+            await SecureStorage.SetAsync(getPrefix(roomId, username) + key, value);
         }
 
-        public static async Task<string?> GetValueFromSecureStorage(string key, int? roomId = null)
+        public static async Task<string?> GetValueFromSecureStorage(string key, string username, int? roomId = null)
         {
-            return await SecureStorage.GetAsync(getPrefix(roomId) + key);
+            return await SecureStorage.GetAsync(getPrefix(roomId, username) + key);
         }
 
 

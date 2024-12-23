@@ -30,17 +30,17 @@ namespace ClientMaui.Cryptography
             publicKey = csp.ToXmlString(false);
             privateKey = csp.ToXmlString(true);
 
-            _ = Database.Database.AddValueToSecureStorage("PublicKey", publicKey,
+            _ = Database.Database.AddValueToSecureStorage("PublicKey", publicKey, endpoint.username,
                 room.id);
-            _ = Database.Database.AddValueToSecureStorage("PrivateKey", privateKey, room.id);
+            _ = Database.Database.AddValueToSecureStorage("PrivateKey", privateKey, endpoint.username, room.id);
 
             return key;
         }
 
         public async Task<bool> LoadKey()
         {
-            var publicKeyString = await Database.Database.GetValueFromSecureStorage("PublicKey", room.id);
-            var privateKeyString = await Database.Database.GetValueFromSecureStorage("PrivateKey", room.id);
+            var publicKeyString = await Database.Database.GetValueFromSecureStorage("PublicKey", endpoint.username, room.id);
+            var privateKeyString = await Database.Database.GetValueFromSecureStorage("PrivateKey", endpoint.username, room.id);
 
             if (string.IsNullOrEmpty(publicKeyString) || string.IsNullOrEmpty(privateKeyString))
             {
