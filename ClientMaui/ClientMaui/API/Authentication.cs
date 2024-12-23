@@ -5,6 +5,9 @@ using System.Net;
 
 namespace ClientMaui.API
 {
+    /*
+     * This class is responsible for handling the authentication of the user
+     */
     internal class Authentication(Endpoint endpoint)
     {
         public static string? Token { get; set; } = "";

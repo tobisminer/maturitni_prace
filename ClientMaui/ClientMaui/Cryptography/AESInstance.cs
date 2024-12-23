@@ -23,25 +23,20 @@ namespace ClientMaui.Cryptography
             var passwordBytes = Convert.FromBase64String(key);
 
             // Set encryption settings
-            var des = Aes.Create();
-            var IV = des.IV;
-            des.Padding = PaddingMode.PKCS7;
-            des.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
-            var transform = des.CreateEncryptor(passwordBytes, IV);
+            var cypher = Aes.Create();
+            var IV = cypher.IV;
+            var transform =
+                CryptographyHelper.CreateSymmetricEncryptor(cypher, key, IV, mode);
             return await CryptographyHelper.EncryptSymmetric(transform, text, IV);
         }
 
         public async Task<string> Decrypt(string encryptedMessage, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
-            var passwordBytes = Convert.FromBase64String(key);
             var (IV, message) =
                 CryptographyHelper.DivideMessage(encryptedMessage);
-
-            // Set encryption settings 
-            var des = Aes.Create();
-            des.Padding = PaddingMode.PKCS7;
-            des.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
-            var transform = des.CreateDecryptor(passwordBytes, IV);
+            var cypher = Aes.Create();
+            var transform =
+                CryptographyHelper.CreateSymmetricDecryptor(cypher, key, IV, mode);
             return await CryptographyHelper.DecryptSymmetric(transform, message);
         }
 
