@@ -16,30 +16,43 @@ public partial class LoginPage : ContentPage
 
     private async void RegisterBtn_OnClicked(object? sender, EventArgs e)
     {
-        bool result = await _authentication.Register(UsernameEntry.Text, PasswordEntry.Text);
-        if (result)
+        try
         {
-            await DisplayAlert("Success", "User registered successfully!", "OK");
+            bool result = await _authentication.Register(UsernameEntry.Text, PasswordEntry.Text);
+            if (result)
+            {
+                await DisplayAlert("Success", "User registered successfully!", "OK");
+            }
+            else
+            {
+                await DisplayAlert("Error", "Error occured while registering user!", "OK");
+            }
         }
-        else
+        catch (Exception)
         {
-            await DisplayAlert("Error", "Error occured while registering user!", "OK");
+            // ignored
         }
     }
 
     private async void LoginBtn_OnClicked(object? sender, EventArgs e)
     {
-        var result = await _authentication.Login(UsernameEntry.Text, PasswordEntry.Text);
-        if (result)
+        try
         {
-            await SecureStorage.SetAsync("password", PasswordEntry.Text);
+            bool result = await _authentication.Login(UsernameEntry.Text, PasswordEntry.Text);
+            if (result)
+            {
+                await SecureStorage.SetAsync("password", PasswordEntry.Text);
 
-            await Navigation.PushAsync(new RoomSelect(_endpoint));
+                await Navigation.PushAsync(new RoomSelect(_endpoint));
+            }
+            else
+            {
+                await DisplayAlert("Error", "Error occured while logging in user!", "OK");
+            }
         }
-        else
+        catch (Exception)
         {
-            await DisplayAlert("Error", "Error occured while logging in user!", "OK");
+            // ignored
         }
-
     }
 }

@@ -43,29 +43,29 @@ public partial class MessageBubble : ContentView
         SetValues();
     }
 
-    public async void setMessageDecryptStatus(ICryptography? cypher, bool decrypt = true)
+    public async Task SetMessageDecryptStatus(ICryptography? cypher, bool decrypt = true)
     {
-        MessageText = decrypt && cypher != null ? await cypher.Decrypt(message.message, message.BlockCypherMode ?? BlockCypherMode.None, message.sender == null) : message.message;
+        //Nastavuje zda se má zpráva dešifrovat nebo ne
+        MessageText = decrypt && cypher != null
+            ? await cypher.Decrypt(message.message,
+                                   message.BlockCypherMode ??
+                                   BlockCypherMode.None, message.sender == null)
+            : message.message;
     }
 
     private void SetValues()
     {
+        //Aktualizuje okno podle nových hodnot
         HorizontalOptions = IsIncoming ? LayoutOptions.Start : LayoutOptions.End;
-        Frame.BackgroundColor = IsIncoming ? Colors.LightBlue : Colors.Red;
+        Frame.BackgroundColor = IsIncoming ? Colors.DarkBlue : Colors.Red;
         if (lastMessageSend != null &&
-            sameTimeToMinutes(timeSend, lastMessageSend.Value))
+            IsTimeSameToMinutes(timeSend, lastMessageSend.Value))
         {
             TimeLbl.IsVisible = false;
             return;
         }
         if (lastMessageSend != null)
-            TimeLbl.Text = getTimeFirstString(timeSend, lastMessageSend.Value);
-    }
-
-    public void SetTimeSend(DateTime timeSend)
-    {
-        this.timeSend = timeSend;
-        SetValues();
+            TimeLbl.Text = GetTimeFirstString(timeSend, lastMessageSend.Value);
     }
     public void SetLastMessageSendTime(DateTime? lastMessageSend)
     {
@@ -74,29 +74,29 @@ public partial class MessageBubble : ContentView
     }
 
 
-    protected override void OnPropertyChanged(string propertyName = null)
+    protected override void OnPropertyChanged(string? propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
         if (propertyName != nameof(IsIncoming)) return;
         SetValues();
     }
 
-    public bool sameTimeToMinutes(DateTime first, DateTime second)
+    public static bool IsTimeSameToMinutes(DateTime first, DateTime second)
     {
         return first.Day == second.Day && first.Hour == second.Hour &&
                 first.Minute == second.Minute;
     }
 
-    public bool sameTimeToDay(DateTime first, DateTime second)
+    public static bool IsTimeSameToDay(DateTime first, DateTime second)
     {
         return first.Day == second.Day;
     }
 
-    private string getTimeFirstString(DateTime first, DateTime? second)
+    private static string GetTimeFirstString(DateTime first, DateTime? second)
     {
         return second == null
             ? first.ToString("f")
-            : sameTimeToMinutes(first, second.Value) ? "" : first.ToString(sameTimeToDay(first, second.Value) ? "t" : "f");
+            : IsTimeSameToMinutes(first, second.Value) ? "" : first.ToString(IsTimeSameToDay(first, second.Value) ? "t" : "f");
     }
 }
 

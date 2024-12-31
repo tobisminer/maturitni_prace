@@ -19,20 +19,13 @@ namespace ClientMaui.Cryptography
         public async Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
             var cypher = System.Security.Cryptography.TripleDES.Create();
-            var IV = cypher.IV;
-            var transform =
-                CryptographyHelper.CreateSymmetricEncryptor(cypher, key, IV, mode);
-            return await CryptographyHelper.EncryptSymmetric(transform, text, IV);
+            return await CryptographyHelper.EncryptSymmetric(cypher, key, mode, text);
         }
 
         public async Task<string> Decrypt(string encryptedMessage, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
-            var (IV, message) =
-                CryptographyHelper.DivideMessage(encryptedMessage);
             var cypher = System.Security.Cryptography.TripleDES.Create();
-            var transform =
-                CryptographyHelper.CreateSymmetricDecryptor(cypher, key, IV, mode);
-            return await CryptographyHelper.DecryptSymmetric(transform, message);
+            return await CryptographyHelper.DecryptSymmetric(cypher, key, mode, encryptedMessage);
         }
     }
 }

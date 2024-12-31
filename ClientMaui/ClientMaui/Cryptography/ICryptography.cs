@@ -30,7 +30,7 @@ namespace ClientMaui.Cryptography
             };
 
         }
-        public static bool BlockCypherMode(string friendlyString)
+        public static bool GetBlockCypherStatus(string friendlyString)
         {
             return friendlyString switch
             {
@@ -52,65 +52,70 @@ namespace ClientMaui.Cryptography
             var split = message.Split(DIVIDER);
             return (Convert.FromBase64String(split[0]), split[1]);
         }
-        public static ICryptoTransform CreateSymmetricEncryptor(dynamic cypher, string key, byte[] IV, BlockCypherMode mode)
+
+
+        // Všechny symetrické šifry používají stejný interface, můžeme zde použít dynamic a všechny šifry schovat pod těchto pár jednotlivých metod a jednotlivé typy se
+        // vytvářejí až v konkrétních třídách a celý kód je tak mnohem čitelnější a jednodušší na údržbu. Změnou toho kódu se změní fungování všech symetrických šifer.
+        public static ICryptoTransform CreateSymmetricTransform(dynamic cypher, string key, byte[] IV, BlockCypherMode mode, bool encrypt)
         {
             var passwordBytes = Convert.FromBase64String(key);
 
-            // Set encryption settings
+            // Nastavení paddingu a módu šifrování
             cypher.Padding = PaddingMode.PKCS7;
             cypher.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
-            return cypher.CreateEncryptor(passwordBytes, IV);
-        }
-        public static ICryptoTransform CreateSymmetricDecryptor(dynamic cypher, string key, byte[] IV, BlockCypherMode mode)
-        {
-            var passwordBytes = Convert.FromBase64String(key);
-
-            // Set encryption settings
-            cypher.Padding = PaddingMode.PKCS7;
-            cypher.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
-            return cypher.CreateDecryptor(passwordBytes, IV);
+            return encrypt ? cypher.CreateEncryptor(passwordBytes, IV) : cypher.CreateDecryptor(passwordBytes, IV);
         }
 
-        public static async Task<string> EncryptSymmetric(ICryptoTransform transform, string message, byte[] IV)
+        public static async Task<string> EncryptSymmetric(dynamic cypher, string key, BlockCypherMode cypherMode, string message)
         {
+
+            var transform =
+                CreateSymmetricTransform(cypher, key, cypher.IV, cypherMode,
+                                         true);
+            var IV = cypher.IV;
 
             var messageBytes = Encoding.UTF8.GetBytes(message);
-            var IVString = Convert.ToBase64String(IV);
-            var mode = CryptoStreamMode.Write;
+            var ivString = Convert.ToBase64String(IV);
+            const CryptoStreamMode mode = CryptoStreamMode.Write;
 
-            // Set up streams and encrypt
+            // Vytvoření memory streamu a zápis do něj
             var memStream = new MemoryStream();
             var cryptoStream = new CryptoStream(memStream, transform, mode);
-            await cryptoStream.WriteAsync(messageBytes, 0, messageBytes.Length);
+            await cryptoStream.WriteAsync(messageBytes);
             await cryptoStream.FlushFinalBlockAsync();
 
-            // Read the encrypted message from the memory stream
+            // Přečtení zašifrované zprávy z memory streamu
             var encryptedMessageBytes = new byte[memStream.Length];
             memStream.Position = 0;
-            _ = await memStream.ReadAsync(encryptedMessageBytes, 0, encryptedMessageBytes.Length);
+            _ = await memStream.ReadAsync(encryptedMessageBytes);
 
             // Encode the encrypted message as base64 string
             var encryptedMessage = Convert.ToBase64String(encryptedMessageBytes);
-            return $"{IVString}{DIVIDER}{encryptedMessage}";
+            return $"{ivString}{DIVIDER}{encryptedMessage}";
         }
-        public static async Task<string> DecryptSymmetric(ICryptoTransform transform, string encryptedMessage)
+        public static async Task<string> DecryptSymmetric(dynamic cypher, string key, BlockCypherMode cypherMode, string encryptedMessage)
         {
-            var encryptedMessageBytes = Convert.FromBase64String(encryptedMessage);
-            var mode = CryptoStreamMode.Write;
+            var (IV, message) =
+                DivideMessage(encryptedMessage);
 
-            // Set up streams and decrypt
+            var transform =
+                CreateSymmetricTransform(cypher, key, IV, cypherMode, false);
+            var encryptedMessageBytes = Convert.FromBase64String(message);
+            const CryptoStreamMode mode = CryptoStreamMode.Write;
+
+            // Vytvoření memory streamu a dešifrování
             var memStream = new MemoryStream();
             var cryptoStream = new CryptoStream(memStream, transform, mode);
-            await cryptoStream.WriteAsync(encryptedMessageBytes, 0, encryptedMessageBytes.Length);
+            await cryptoStream.WriteAsync(encryptedMessageBytes);
             await cryptoStream.FlushFinalBlockAsync();
 
-            // Read decrypted message from memory stream
+            // Přečtení dešifrované zprávy z memory streamu
             var decryptedMessageBytes = new byte[memStream.Length];
             memStream.Position = 0;
-            _ = await memStream.ReadAsync(decryptedMessageBytes, 0, decryptedMessageBytes.Length);
+            _ = await memStream.ReadAsync(decryptedMessageBytes);
 
-            var message = Encoding.UTF8.GetString(decryptedMessageBytes);
-            return message;
+            var decryptedMessage = Encoding.UTF8.GetString(decryptedMessageBytes);
+            return decryptedMessage;
         }
     }
 }

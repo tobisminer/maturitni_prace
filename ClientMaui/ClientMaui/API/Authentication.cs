@@ -12,7 +12,7 @@ namespace ClientMaui.API
     {
         public static string? Token { get; set; } = "";
 
-        public async Task<bool> Register(string username, string password)
+        public async Task<bool> Register(string? username, string password)
         {
             var user = new User
             {
@@ -20,9 +20,9 @@ namespace ClientMaui.API
                 password = password
             };
             var response = await endpoint.Request(APIEndpoints.UserEndpoints.Register, method: Method.Post, body: JsonConvert.SerializeObject(user));
-            return response.StatusCode != HttpStatusCode.OK ? false : await Login(username, password);
+            return response.StatusCode == HttpStatusCode.OK && await Login(username, password);
         }
-        public async Task<bool> Login(string username, string password)
+        public async Task<bool> Login(string? username, string password)
         {
             var user = new User
             {
@@ -31,7 +31,7 @@ namespace ClientMaui.API
             };
             var response = await endpoint.Request(APIEndpoints.UserEndpoints.Login, method: Method.Post, body: JsonConvert.SerializeObject(user));
             if (response.StatusCode != HttpStatusCode.OK) return false;
-            Token = response.Content.Replace("\"", "");
+            Token = response.Content?.Replace("\"", "");
 
             // save username so we can use it later
             endpoint.username = username;

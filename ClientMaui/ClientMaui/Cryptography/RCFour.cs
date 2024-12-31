@@ -76,12 +76,11 @@ namespace ClientMaui.Cryptography
                 j = (j + S[i]) % 256;
                 (S[i], S[j]) = (S[j], S[i]);
 
-                var keystream = S[(S[i] + S[j]) % 256];
+                var keyStream = S[(S[i] + S[j]) % 256];
 
-                result[iteration] = Convert.ToByte(data[iteration] ^ keystream);
+                result[iteration] = Convert.ToByte(data[iteration] ^ keyStream);
             }
 
-            //  return the result
             return result;
         }
     }

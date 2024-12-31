@@ -7,7 +7,7 @@ namespace ClientMaui.API
     {
         public string url = url;
 
-        public string username = "";
+        public string? username = "";
 
         private readonly RestClient _client = new(url);
 

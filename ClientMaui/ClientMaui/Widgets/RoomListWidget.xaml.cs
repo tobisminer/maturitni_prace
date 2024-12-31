@@ -4,6 +4,7 @@ namespace ClientMaui.Widgets;
 
 public partial class RoomListWidget : ContentView
 {
+    // Vytváří widget pro jednotlivé místnosti
     private Room room;
     public RoomListWidget(Room room)
     {
@@ -15,6 +16,7 @@ public partial class RoomListWidget : ContentView
         RoomHeader.Text += personCount switch
         {
             1 => "👤",
+            2 => "👥",
             _ => "\ud83e\udeb9"
         };
         RoomSecurity.Text =
@@ -24,6 +26,15 @@ public partial class RoomListWidget : ContentView
 
     private int GetNumberOfPerson()
     {
-        return room.key_person_1 != null ? 1 : 0;
+        var personCount = 0;
+        if (room.key_person_1 != null)
+        {
+            personCount++;
+        }
+        if (room.key_person_2 != null)
+        {
+            personCount++;
+        }
+        return personCount;
     }
 }

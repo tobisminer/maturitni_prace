@@ -23,8 +23,8 @@ public partial class ChatRoom : ContentPage
     private ICryptography? cypher;
 
     private readonly int oldMessageToLoadCount = 20;
-    private int lastMessageCount = 0;
-    private int? messageCount = null;
+    private int lastMessageCount;
+    private int? messageCount;
     private bool decryptMessages = true;
 
     public ChatRoom(Endpoint endpoint, Room room)
@@ -50,6 +50,7 @@ public partial class ChatRoom : ContentPage
 
     private void KeyPressed(object? obj, KeyboardHookEventArgs args)
     {
+        //Přidání kláves které mohou odesílat zprvávu
         List<KeyCode> keyListSend =
         [
             KeyCode.VcEnter,
@@ -69,70 +70,91 @@ public partial class ChatRoom : ContentPage
 
     protected override async void OnAppearing()
     {
-        ConnectToRoom();
-        connection = new HubConnectionBuilder()
-            .WithUrl($"{endpoint.url}/new-message",
-                (opts) =>
-                {
-                    opts.Headers["Authorization"] = $"Bearer {Authentication.Token}";
-                    opts.HttpMessageHandlerFactory = message =>
-                    {
-                        if (message is HttpClientHandler clientHandler)
-                            // always verify the SSL certificate
-                            clientHandler.ServerCertificateCustomValidationCallback +=
-                                (_, _, _, _) => true;
-                        return message;
-                    };
-
-                })
-            .Build();
-
-        connection.On<string>("ReceiveMessage", async message =>
+        // Připojení se do místnosti ale také do SignalR
+        try
         {
-            var messageObject = JsonConvert.DeserializeObject<Message>(message);
-            Dispatcher.Dispatch(() =>
+            ConnectToRoom();
+            connection = new HubConnectionBuilder()
+                        .WithUrl($"{endpoint.url}/new-message",
+                                 (opts) =>
+                                 {
+                                     opts.Headers["Authorization"] = $"Bearer {Authentication.Token}";
+                                     // Vždy ověřovat SSL certifikát i když neexistuje
+                                     opts.HttpMessageHandlerFactory = message =>
+                                     {
+                                         if (message is HttpClientHandler clientHandler)
+                                             clientHandler.ServerCertificateCustomValidationCallback +=
+                                                 (_, _, _, _) => true;
+                                         return message;
+                                     };
+
+                                 })
+                        .Build();
+
+            connection.On<string>("ReceiveMessage", async message =>
             {
-                AddMessageToStack(messageObject);
+                var messageObject = JsonConvert.DeserializeObject<Message>(message);
+                Dispatcher.Dispatch(() =>
+                {
+                    AddMessageToStack(messageObject);
+                });
+                await Task.Delay(100);
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.End,
+                                             true);
+                });
             });
-            await Task.Delay(100);
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.End,
-                    true);
-            });
-        });
-        await connection.StartAsync();
+            await connection.StartAsync();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 
     private async void ConnectToRoom()
     {
-        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.Connect, id: room.id);
-
-        if (response.StatusCode != HttpStatusCode.OK)
+        try
         {
-            await DisplayAlert("Error", "Error occured while connecting to server, check IP address and port!", "OK");
-            return;
+            var response = await endpoint.Request(APIEndpoints.RoomEndpoints.Connect, id: room.id);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                await DisplayAlert("Error", "Error occured while connecting to server, check IP address and port!", "OK");
+                return;
+            }
+            if (response.Content != null) messageCount = int.Parse(response.Content);
+
+            await SetupCryptography();
+
+            // Načtení starých zpráv
+            lastMessageCount += oldMessageToLoadCount;
+            var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id, from: 0, to: oldMessageToLoadCount);
+            if (messages.StatusCode != HttpStatusCode.OK)
+            {
+                return;
+            }
+
+            if (messages.Content != null)
+            {
+                var messageList = JsonConvert.DeserializeObject<List<Message>>(messages.Content);
+
+                if (messageList != null)
+                    foreach (var message in messageList)
+                    {
+                        AddMessageToStack(message);
+                    }
+            }
+
+            await Task.Delay(100);
+            await ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.End,
+                                           true);
         }
-        if (response.Content != null) messageCount = int.Parse(response.Content);
-
-        await SetupCryptography();
-
-
-        lastMessageCount += oldMessageToLoadCount;
-        var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id, from: 0, to: oldMessageToLoadCount);
-        if (messages.StatusCode != HttpStatusCode.OK)
+        catch (Exception)
         {
-            return;
+            // ignored
         }
-        var messageList = JsonConvert.DeserializeObject<List<Message>>(messages.Content);
-        foreach (var message in messageList)
-        {
-            AddMessageToStack(message);
-        }
-        await Task.Delay(100);
-        await ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.End,
-                true);
-
     }
 
     private async Task SetupCryptography()
@@ -143,15 +165,15 @@ public partial class ChatRoom : ContentPage
 
         if (cypher.GetType() == typeof(RSAInstance))
         {
-            var RSAInstance = (RSAInstance)cypher;
-            await RSAInstance.SetupForRsa(endpoint, room, RSAInstance);
+            var rsaInstance = (RSAInstance)cypher;
+            await RSAInstance.SetupForRsa(endpoint, room, rsaInstance);
             return;
         }
 
         if (cypher.GetType() == typeof(RSAandAES))
         {
             var instance = (RSAandAES)cypher;
-            var rsa = instance.rsa;
+            var rsa = instance.RSA;
             await RSAInstance.SetupForRsa(endpoint, room, rsa);
             return;
         }
@@ -175,16 +197,15 @@ public partial class ChatRoom : ContentPage
     {
         if (message == null) return;
 
-        //check if MessageStack is empty
-        MessageBubble? lastMessage = default;
+
+        MessageBubble? lastMessage = null;
         if (MessagesStack.Children.Count != 0)
         {
             lastMessage = MessagesStack.Children.OfType<MessageBubble>().Last();
         }
         var label = new MessageBubble(message);
-        label.SetTimeSend(message.send_at);
         label.SetLastMessageSendTime(lastMessage?.timeSend);
-        label.setMessageDecryptStatus(cypher, decryptMessages);
+        _ = label.SetMessageDecryptStatus(cypher, decryptMessages);
         MessagesStack.Children.Add(label);
     }
 
@@ -194,24 +215,31 @@ public partial class ChatRoom : ContentPage
         return cypher == null ? message : await cypher.Encrypt(message, mode);
     }
 
-    private async void SendButton_OnClicked(object? sender, EventArgs e)
+    private async void SendButton_OnClicked(object? sender, EventArgs? e)
     {
-        var message = MessageEntry.Text;
-        if (string.IsNullOrWhiteSpace(message))
-            return;
-        MessageEntry.Text = "";
-        Message messageObject = new()
+        try
         {
-            message = await EncryptMessage(message, room.BlockCypherMode ?? BlockCypherMode.None),
-            sender = Authentication.Token,
-            BlockCypherMode = room.BlockCypherMode
-        };
-        var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id);
-
+            var message = MessageEntry.Text;
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+            MessageEntry.Text = "";
+            Message messageObject = new()
+            {
+                message = await EncryptMessage(message, room.BlockCypherMode ?? BlockCypherMode.None),
+                sender = Authentication.Token,
+                BlockCypherMode = room.BlockCypherMode
+            };
+            var response = await endpoint.Request(APIEndpoints.RoomEndpoints.SendMessage, body: JsonConvert.SerializeObject(messageObject), method: Method.Post, id: room.id);
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 
     private void SortMessageStack()
     {
+        // Seřazení zpráv podle id aby byly vždy ve správném pořadí
         var elements = MessagesStack.Children.OfType<MessageBubble>().OrderBy(message => message.id).ToList();
         MessagesStack.Children.Clear();
         foreach (var element in elements)
@@ -222,20 +250,34 @@ public partial class ChatRoom : ContentPage
 
     private async void LoadOldMessages()
     {
-        var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id, from: lastMessageCount, to: lastMessageCount + oldMessageToLoadCount);
-        lastMessageCount += oldMessageToLoadCount;
-        if (messages.StatusCode != HttpStatusCode.OK)
+        try
         {
-            return;
-        }
-        var messageList = JsonConvert.DeserializeObject<List<Message>>(messages.Content);
-        foreach (var message in messageList)
-        {
-            AddMessageToStack(message);
-        }
+            //Načtení starých zpráv v rozmezí od lastMessageCount do lastMessageCount + oldMessageToLoadCount
+            var messages = await endpoint.Request(APIEndpoints.RoomEndpoints.MessageList, id: room.id, from: lastMessageCount, to: lastMessageCount + oldMessageToLoadCount);
+            lastMessageCount += oldMessageToLoadCount;
+            if (messages.StatusCode != HttpStatusCode.OK || messages.Content == null)
+            {
+                return;
+            }
 
-        await ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.Start, true);
-        SortMessageStack();
+            var messageList = JsonConvert.DeserializeObject<List<Message>>(messages.Content);
+
+            if (messageList != null)
+                foreach (var message in messageList)
+                {
+                    AddMessageToStack(message);
+                }
+            // Posunutí scrollu nahoru
+            SortMessageStack();
+            await Task.Delay(100);
+            
+            await ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.Start, true);
+            
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 
     private void ScrollView_OnScrolled(object? sender, ScrolledEventArgs e)
@@ -251,7 +293,7 @@ public partial class ChatRoom : ContentPage
         decryptMessages = !decryptMessages;
         foreach (var message in MessagesStack.Children.OfType<MessageBubble>())
         {
-            message.setMessageDecryptStatus(cypher, decryptMessages);
+            _ = message.SetMessageDecryptStatus(cypher, decryptMessages);
         }
 
         SwitchModeButton.Text = decryptMessages ? "Klasický režim" : "Nedešifrovaně";
