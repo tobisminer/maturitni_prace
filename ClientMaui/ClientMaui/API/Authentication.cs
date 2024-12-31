@@ -20,8 +20,7 @@ namespace ClientMaui.API
                 password = password
             };
             var response = await endpoint.Request(APIEndpoints.UserEndpoints.Register, method: Method.Post, body: JsonConvert.SerializeObject(user));
-            if (response.StatusCode != HttpStatusCode.OK) return false;
-            return await Login(username, password);
+            return response.StatusCode != HttpStatusCode.OK ? false : await Login(username, password);
         }
         public async Task<bool> Login(string username, string password)
         {

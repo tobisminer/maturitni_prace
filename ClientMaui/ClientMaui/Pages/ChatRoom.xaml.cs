@@ -9,7 +9,6 @@ using RestSharp;
 using SharpHook;
 using SharpHook.Native;
 using System.Net;
-using System.Security.Cryptography;
 
 namespace ClientMaui;
 public partial class ChatRoom : ContentPage
@@ -18,7 +17,7 @@ public partial class ChatRoom : ContentPage
     private Room room;
     private HubConnection? connection;
 
-    private bool focus;
+    private bool focus => MessageEntry.IsFocused;
     private TaskPoolGlobalHook hook;
 
     private ICryptography? cypher;
@@ -116,7 +115,7 @@ public partial class ChatRoom : ContentPage
         }
         if (response.Content != null) messageCount = int.Parse(response.Content);
 
-        await CryptographyTask();
+        await SetupCryptography();
 
 
         lastMessageCount += oldMessageToLoadCount;
@@ -136,7 +135,7 @@ public partial class ChatRoom : ContentPage
 
     }
 
-    private async Task CryptographyTask()
+    private async Task SetupCryptography()
     {
         if (room.RoomType == "No Encryption") return;
 
@@ -145,34 +144,17 @@ public partial class ChatRoom : ContentPage
         if (cypher.GetType() == typeof(RSAInstance))
         {
             var RSAInstance = (RSAInstance)cypher;
-            await RSAInstance.setupForRSA(endpoint, room, RSAInstance);
+            await RSAInstance.SetupForRsa(endpoint, room, RSAInstance);
             return;
-
-            RSAInstance.endpoint = endpoint;
-            RSAInstance.room = room;
-            _ = await RSAInstance.GetOtherPublicKey();
-
-            if (await RSAInstance.LoadKey()) return;
-            var myNewPublicKey = RSAInstance.GenerateKey();
-            var myPublicKeyJson = new Key
-            {
-                key = RSAInstance.Base64Encode(myNewPublicKey)
-            };
-            await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
-            return;
-
         }
 
         if (cypher.GetType() == typeof(RSAandAES))
         {
             var instance = (RSAandAES)cypher;
             var rsa = instance.rsa;
-            await RSAInstance.setupForRSA(endpoint, room, rsa);
+            await RSAInstance.SetupForRsa(endpoint, room, rsa);
             return;
-
-
         }
-
 
         var key = (await endpoint.Request(APIEndpoints.RoomEndpoints.GetKey, id: room.id)).Content;
         if (string.IsNullOrEmpty(key))
@@ -254,16 +236,6 @@ public partial class ChatRoom : ContentPage
 
         await ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.Start, true);
         SortMessageStack();
-    }
-
-    private void MessageEntry_OnFocused(object? sender, FocusEventArgs e)
-    {
-        focus = true;
-    }
-
-    private void MessageEntry_OnUnfocused(object? sender, FocusEventArgs e)
-    {
-        focus = false;
     }
 
     private void ScrollView_OnScrolled(object? sender, ScrolledEventArgs e)

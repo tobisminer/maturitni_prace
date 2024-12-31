@@ -48,7 +48,7 @@
                 <ColumnDefinition Width="6*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Entry x:Name="MessageEntry" Placeholder="Type your message here" Margin="0,0,10,0" Focused="MessageEntry_OnFocused" Unfocused="MessageEntry_OnUnfocused"></Entry>
+            <Entry x:Name="MessageEntry" Placeholder="Type your message here" Margin="0,0,10,0"></Entry>
             <Button x:Name="SendButton" Grid.Column="1" Text="👉" Clicked="SendButton_OnClicked"></Button>
 
         </Grid>

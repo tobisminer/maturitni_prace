@@ -2,10 +2,9 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ClientMaui.Widgets.MessageBubble">
-
-    <VerticalStackLayout>
-        <Label x:Name="TimeLbl" HorizontalOptions="{Binding HorizontalOptions}" Text="čas"></Label>
-        <Frame x:Name="Frame" 
+        <VerticalStackLayout>
+            <Label x:Name="TimeLbl" HorizontalOptions="{Binding HorizontalOptions}" Text="čas"></Label>
+            <Frame x:Name="Frame" 
                CornerRadius="20" 
                Padding="10"
                HasShadow="False"
@@ -13,16 +12,14 @@
                HorizontalOptions="{Binding HorizontalOptions}"
                MaximumWidthRequest="300"
                Margin="5,0">
-            <Label Text="{Binding MessageText}" 
+                <Label Text="{Binding MessageText}" 
                    TextColor="White"
                    FontSize="16" 
                    VerticalOptions="Center" 
                    HorizontalOptions="Start" />
-        </Frame>
+            </Frame>
 
 
-    </VerticalStackLayout>
-   
-
+        </VerticalStackLayout>
 
 </ContentView>

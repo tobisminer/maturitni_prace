@@ -8,7 +8,7 @@ namespace Server.Models
     {
         public Room()
         {
-            Messages = new List<Message>();
+            Messages = [];
             created_at = DateTime.Now;
             can_connect = true;
         }

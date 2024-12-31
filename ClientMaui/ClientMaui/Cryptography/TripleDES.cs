@@ -1,5 +1,4 @@
 ﻿using ClientMaui.Entities.Room;
-using System.Security.Cryptography;
 
 namespace ClientMaui.Cryptography
 {

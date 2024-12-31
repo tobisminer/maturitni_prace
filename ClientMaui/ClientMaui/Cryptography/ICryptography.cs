@@ -40,14 +40,16 @@ namespace ClientMaui.Cryptography
                 "Triple DES" => true,
                 "RC4" => false,
                 "RSA" => false,
-                "RSA+AES" => false,
+                "RSA+AES" => true,
                 _ => false
             };
         }
 
+        private const string DIVIDER = "IV@TEXT";
+
         public static (byte[], string) DivideMessage(string message)
         {
-            var split = message.Split("|");
+            var split = message.Split(DIVIDER);
             return (Convert.FromBase64String(split[0]), split[1]);
         }
         public static ICryptoTransform CreateSymmetricEncryptor(dynamic cypher, string key, byte[] IV, BlockCypherMode mode)
@@ -58,7 +60,6 @@ namespace ClientMaui.Cryptography
             cypher.Padding = PaddingMode.PKCS7;
             cypher.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
             return cypher.CreateEncryptor(passwordBytes, IV);
-
         }
         public static ICryptoTransform CreateSymmetricDecryptor(dynamic cypher, string key, byte[] IV, BlockCypherMode mode)
         {
@@ -68,11 +69,11 @@ namespace ClientMaui.Cryptography
             cypher.Padding = PaddingMode.PKCS7;
             cypher.Mode = BlockCypherModeHelper.ConvertToCipherMode(mode);
             return cypher.CreateDecryptor(passwordBytes, IV);
-
         }
 
         public static async Task<string> EncryptSymmetric(ICryptoTransform transform, string message, byte[] IV)
         {
+
             var messageBytes = Encoding.UTF8.GetBytes(message);
             var IVString = Convert.ToBase64String(IV);
             var mode = CryptoStreamMode.Write;
@@ -86,12 +87,11 @@ namespace ClientMaui.Cryptography
             // Read the encrypted message from the memory stream
             var encryptedMessageBytes = new byte[memStream.Length];
             memStream.Position = 0;
-            _ = memStream.Read(encryptedMessageBytes, 0, encryptedMessageBytes.Length);
+            _ = await memStream.ReadAsync(encryptedMessageBytes, 0, encryptedMessageBytes.Length);
 
             // Encode the encrypted message as base64 string
             var encryptedMessage = Convert.ToBase64String(encryptedMessageBytes);
-            return $"{IVString}|{encryptedMessage}";
-
+            return $"{IVString}{DIVIDER}{encryptedMessage}";
         }
         public static async Task<string> DecryptSymmetric(ICryptoTransform transform, string encryptedMessage)
         {
@@ -107,11 +107,10 @@ namespace ClientMaui.Cryptography
             // Read decrypted message from memory stream
             var decryptedMessageBytes = new byte[memStream.Length];
             memStream.Position = 0;
-            _ = memStream.Read(decryptedMessageBytes, 0, decryptedMessageBytes.Length);
+            _ = await memStream.ReadAsync(decryptedMessageBytes, 0, decryptedMessageBytes.Length);
 
             var message = Encoding.UTF8.GetString(decryptedMessageBytes);
             return message;
-
         }
     }
 }

@@ -13,6 +13,8 @@ namespace ClientMaui.Cryptography
         public RSAInstance rsa = new();
         public AESInstance aes = new();
 
+        private const string SPLITTER = "AESKEY@TEXT";
+
         public string GenerateKey()
         {
             var rsaKey = rsa.GenerateKey();
@@ -32,12 +34,12 @@ namespace ClientMaui.Cryptography
             GenerateAESKey();
             var encryptedText = await aes.Encrypt(text);
             var encryptedKey = await rsa.Encrypt(aes.key);
-            return $"{encryptedKey}|{encryptedText}";
+            return $"{encryptedKey}{SPLITTER}{encryptedText}";
         }
 
         public async Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
-            var split = text.Split('|');
+            var split = text.Split(SPLITTER);
             var decryptedKey = await rsa.Decrypt(split[0], mode, isIncoming);
             aes.key = decryptedKey;
             return await aes.Decrypt(split[1]);

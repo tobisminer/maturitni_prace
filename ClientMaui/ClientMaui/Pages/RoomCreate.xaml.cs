@@ -72,7 +72,7 @@ public partial class RoomCreate : ContentPage
     {
         if (RoomTypePicker.SelectedItem == null) return;
         var roomType = RoomTypePicker.SelectedItem.ToString()!.Split(" -")[0];
-        var blockMode = CryptographyHelper.BlockCypherMode(roomType);
+        var blockMode = CryptographyHelper.GetBlockCypherStatus(roomType);
         BlockCypherModePicker.IsVisible = blockMode;
     }
 }

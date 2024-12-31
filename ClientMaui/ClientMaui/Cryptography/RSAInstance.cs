@@ -1,11 +1,11 @@
 ﻿using ClientMaui.API;
 using ClientMaui.Database.Entities;
+using ClientMaui.Entities;
 using ClientMaui.Entities.Room;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Security.Cryptography;
 using System.Text;
-using ClientMaui.Entities;
 
 namespace ClientMaui.Cryptography
 {
@@ -42,13 +42,15 @@ namespace ClientMaui.Cryptography
 
         public async Task<bool> LoadKey()
         {
+            if (string.IsNullOrEmpty(publicKey) == false && string.IsNullOrEmpty(privateKey) == false)
+                return true;
+
+
             var publicKeyString = await Database.Database.GetValueFromSecureStorage("PublicKey", endpoint.username, room.id);
             var privateKeyString = await Database.Database.GetValueFromSecureStorage("PrivateKey", endpoint.username, room.id);
 
             if (string.IsNullOrEmpty(publicKeyString) || string.IsNullOrEmpty(privateKeyString))
-            {
                 return false;
-            }
 
             publicKey = publicKeyString;
             privateKey = privateKeyString;
@@ -103,6 +105,7 @@ namespace ClientMaui.Cryptography
             var data = Encoding.UTF8.GetBytes(text);
             var cypher = csp.Encrypt(data, false);
             var cypherString = Convert.ToBase64String(cypher);
+            // Here we save the message encrypted by our public key, so we can decrypt it later, we should save the message on the server, but for now we will save it on the local database
             var mess = new MessageDbEntity
             {
                 Message = EncryptByMyPublicKey(text),
@@ -114,12 +117,13 @@ namespace ClientMaui.Cryptography
 
         public async Task<string> Decrypt(string text, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
         {
-            if (!isIncoming)
+            if (!isIncoming) // message is coming from me
             {
                 var mess = await Database.Database.GetMessagesByEncryptedString(text);
                 text = mess?.Message ?? text;
             }
 
+            await LoadKey();
             try
             {
                 var csp = new RSACryptoServiceProvider();
@@ -136,7 +140,7 @@ namespace ClientMaui.Cryptography
             return text;
         }
 
-        public static async Task setupForRSA(Endpoint endpoint,
+        public static async Task SetupForRsa(Endpoint endpoint,
             Room room,
             RSAInstance rsaInstance)
         {

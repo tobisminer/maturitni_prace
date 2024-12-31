@@ -2,8 +2,9 @@
 {
     public class RoomTypeJson
     {
-        public string name { get; set; }
-        public bool isSecure { get; set; }
+        public required string name { get; set; }
+
+        public required bool isSecure { get; set; }
 
     }
 }

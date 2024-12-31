@@ -1,12 +1,13 @@
 using ClientMaui.API;
 using ClientMaui.Entities.Room;
+using ClientMaui.Pages;
 using ClientMaui.Widgets;
 using Newtonsoft.Json;
 using System.Net;
 
 namespace ClientMaui;
 
-public partial class RoomSelect : ContentPage
+public partial class RoomSelect
 {
     private Endpoint endpoint;
     public RoomSelect(Endpoint endpoint)
@@ -36,7 +37,11 @@ public partial class RoomSelect : ContentPage
 
             RoomList.Children.Add(roomWidget);
         }
+    }
 
-        RoomList.Children.Add(new RoomCreateWidget(endpoint));
+    private void CreateRoomButton_OnClicked(object? sender, EventArgs e)
+    {
+        var page = new RoomCreate(endpoint);
+        Navigation.PushAsync(page);
     }
 }

@@ -94,11 +94,9 @@ public partial class MessageBubble : ContentView
 
     private string getTimeFirstString(DateTime first, DateTime? second)
     {
-        if (second == null)
-            return first.ToString("f");
-        if (sameTimeToMinutes(first, second.Value))
-            return "";
-        return first.ToString(sameTimeToDay(first, second.Value) ? "t" : "f");
+        return second == null
+            ? first.ToString("f")
+            : sameTimeToMinutes(first, second.Value) ? "" : first.ToString(sameTimeToDay(first, second.Value) ? "t" : "f");
     }
 }
 

@@ -20,8 +20,6 @@ namespace ClientMaui.Cryptography
 
         public async Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
-            var passwordBytes = Convert.FromBase64String(key);
-
             // Set encryption settings
             var cypher = Aes.Create();
             var IV = cypher.IV;

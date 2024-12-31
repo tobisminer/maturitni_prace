@@ -28,6 +28,7 @@ namespace Server.Controllers
         {
             authorization = Authentication.GetTokenFromHeader(authorization);
             var identification = Authentication.GetIdentifierFromToken(db, authorization);
+            //Získání všech místností a označení těch, které může uživatel navštívit
             var rooms = (from room in db.Rooms.ToList()
                          let canConnect = room.key_person_1 == identification ||
                                           room.key_person_2 == identification ||
@@ -70,6 +71,7 @@ namespace Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<List<RoomTypeJson>> RoomTypes()
         {
+            //Vrátí všechny typy místností
             return Ok(RoomTypesExtensions.GetAll());
         }
 
@@ -88,21 +90,19 @@ namespace Server.Controllers
             {
                 return result;
             }
-
+            // Kontrola pokud je místnost plná a uživatel je jedním z uživatelů, pokud ano, vrátí počet zpráv
             if (identification == room?.key_person_1 ||
                 identification == room?.key_person_2)
             {
                 return Ok(room!.Messages.Count);
             }
+            //Pokud místnost není plná, uživatel se připojí a vrátí se počet zpráv
 
             if (room!.key_person_1 == null)
             {
                 room.key_person_1 = identification;
             }
-            else if (room.key_person_2 == null)
-            {
-                room.key_person_2 = identification;
-            }
+            else room.key_person_2 ??= identification;
             db.SaveChanges();
             return Ok(room.Messages.Count);
         }
@@ -124,19 +124,18 @@ namespace Server.Controllers
                 return result;
             }
 
-            if (room.RoomType.isAsymmetric())
-            {
-                // If the room is RSA, return the public key of the other person
-                if (identification == room.key_person_1)
-                {
-                    return Ok(room.public_key_person_2);
-                }
-                else if (identification == room.key_person_2)
-                {
-                    return Ok(room.public_key_person_1);
-                }
+            if (!room!.RoomType.isAsymmetric()) return Ok(room.cryptography_key);
 
+            // Pokud je místnost asymetrická, vrátí veřejný klíč druhého uživatele
+            if (identification == room.key_person_1)
+            {
+                return Ok(room.public_key_person_2);
             }
+            else if (identification == room.key_person_2)
+            {
+                return Ok(room.public_key_person_1);
+            }
+
 
             return Ok(room.cryptography_key);
         }
@@ -156,8 +155,8 @@ namespace Server.Controllers
             {
                 return result;
             }
-
-            if (room.RoomType.isAsymmetric())
+            //Nastavení klíče pro místnost
+            if (room!.RoomType.isAsymmetric())
             {
                 if (identification == room.key_person_1)
                 {
@@ -168,7 +167,7 @@ namespace Server.Controllers
                     room.public_key_person_2 = key.key;
                 }
             }
-            room!.cryptography_key = key.key;
+            room.cryptography_key = key.key;
             db.SaveChanges();
             return Ok("Key set");
         }
@@ -189,7 +188,7 @@ namespace Server.Controllers
                 return result;
             }
 
-            var messegeForSender = new Message
+            var messageForSender = new Message
             {
                 message = message.message,
                 sender = identification,
@@ -205,13 +204,13 @@ namespace Server.Controllers
                 BlockCypherMode = room.BlockCypherMode
             };
 
-            room!.Messages.Add(messegeForSender);
+            room.Messages.Add(messageForSender);
 
             db.SaveChanges();
 
-            //convert messageObject to string variable
+            //Převedení zprávy na JSON string
 
-            var stringForSender = JsonConvert.SerializeObject(messegeForSender);
+            var stringForSender = JsonConvert.SerializeObject(messageForSender);
             var stringForReceiver = JsonConvert.SerializeObject(messageForReceiver);
 
             //pomocí SignalR poslat zprávu oběma uživatelům
@@ -245,7 +244,7 @@ namespace Server.Controllers
                 return BadRequest("Invalid range");
             }
             var messages = room!.Messages.Skip(from).Take(to - from).ToList();
-            //remove identification from messages that are not from the user
+            //Odebrání identifikace od zpráv, které nejsou od uživatele který je přihlášen
             foreach (var message in messages.Where(message => message.sender != identification))
             {
                 message.sender = null;
@@ -263,22 +262,13 @@ namespace Server.Controllers
                 return BadRequest("Invalid ID");
             }
             var room = db.Rooms.Find(roomId);
-            if (roomId != null && room == null)
-            {
-                return NotFound("Not Found");
-            }
-
-            if (checkIdentification && string.IsNullOrEmpty(identification))
-            {
-                return Unauthorized("Invalid Authentication");
-            }
-
-            if (checkRoomIdentification && (identification != room?.key_person_1 && identification != room?.key_person_2))
-            {
-                return Unauthorized("Invalid access to room");
-            }
-
-            return null;
+            return roomId != null && room == null
+                ? NotFound("Not Found")
+                : checkIdentification && string.IsNullOrEmpty(identification)
+                ? Unauthorized("Invalid Authentication")
+                : checkRoomIdentification && identification != room?.key_person_1 && identification != room?.key_person_2
+                ? Unauthorized("Invalid access to room")
+                : null;
         }
     }
 }

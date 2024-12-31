@@ -3,12 +3,43 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ClientMaui.RoomSelect"
              Title="RoomSelect">
-    <StackLayout>
-        <Label 
-            Text="All the rooms in one place :)"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-
-       <FlexLayout Wrap="Wrap" Margin="10"  FlowDirection="LeftToRight" x:Name="RoomList"></FlexLayout>
-    </StackLayout>
+    <ScrollView>
+        <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <StackLayout>
+                    <Label 
+                        Text="Seznam místností"
+                        VerticalOptions="Center" 
+                        HorizontalOptions="Center" />
+                    <FlexLayout 
+                        Wrap="Wrap" 
+                        Margin="10" 
+                        FlowDirection="LeftToRight" 
+                        x:Name="RoomList" 
+                        AlignItems="Start"
+                        JustifyContent="Start">
+                    </FlexLayout>
+                </StackLayout>
+            </Grid>
+            <Grid Grid.Row="1">
+                <Button 
+                    x:Name="CreateRoomButton" 
+                    WidthRequest="150"
+                    HeightRequest="10" 
+                    HorizontalOptions="Center" 
+                    VerticalOptions="Center"
+                    Clicked="CreateRoomButton_OnClicked" 
+                    Height="10" 
+                    Margin="10"
+                    BackgroundColor="#80FFFFFF"
+                    Text="Vytvořit místnost"
+                    >
+                </Button>
+            </Grid>
+        </Grid>
+    </ScrollView>
 </ContentPage>

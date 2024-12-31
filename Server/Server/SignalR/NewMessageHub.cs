@@ -6,7 +6,7 @@ namespace Server.SignalR
 {
     public sealed class NewMessageHub(ApplicationDbContext db) : Hub
     {
-        public static Dictionary<string, string> connectionToken = new();
+        public static Dictionary<string, string> connectionToken = [];
         public override Task OnConnectedAsync()
         {
             Console.WriteLine($"Client {Context.ConnectionId} connected");
