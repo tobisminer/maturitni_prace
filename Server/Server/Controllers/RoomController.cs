@@ -243,7 +243,8 @@ namespace Server.Controllers
             {
                 return BadRequest("Invalid range");
             }
-            var messages = room!.Messages.Skip(from).Take(to - from).ToList();
+
+            var messages = room!.Messages.Reverse().Skip(from).Take(to - from).Reverse().ToList();
             //Odebrání identifikace od zpráv, které nejsou od uživatele který je přihlášen
             foreach (var message in messages.Where(message => message.sender != identification))
             {
