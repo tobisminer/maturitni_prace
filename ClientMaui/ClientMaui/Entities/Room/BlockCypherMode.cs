@@ -18,7 +18,7 @@ namespace ClientMaui.Entities.Room
                 BlockCypherMode.ECB => "ECB",
                 BlockCypherMode.CBC => "CBC",
                 BlockCypherMode.CFB => "CFB",
-                _ => throw new ArgumentOutOfRangeException()
+                _ => "Neznamy"
             };
         }
         public static BlockCypherMode ConvertFromString(string? blockCypherMode)
@@ -28,7 +28,7 @@ namespace ClientMaui.Entities.Room
                 "ECB" => BlockCypherMode.ECB,
                 "CBC" => BlockCypherMode.CBC,
                 "CFB" => BlockCypherMode.CFB,
-                _ => throw new ArgumentOutOfRangeException()
+                _ => BlockCypherMode.None
             };
         }
 

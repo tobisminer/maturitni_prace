@@ -19,8 +19,7 @@ public partial class RoomListWidget : ContentView
             2 => "👥",
             _ => "\ud83e\udeb9"
         };
-        RoomSecurity.Text =
-            $"{room.RoomType} ({BlockCypherModeHelper.ConvertToString(room.BlockCypherMode ?? BlockCypherMode.None)})";
+        RoomSecurity.Text = $"{room.RoomType} ({BlockCypherModeHelper.ConvertToString(room.BlockCypherMode ?? BlockCypherMode.None)})";
         ConnectButton.IsEnabled = room.can_connect;
     }
 
