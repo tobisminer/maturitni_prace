@@ -1,6 +1,4 @@
 using ClientMaui.API;
-using ClientMaui.Cryptography;
-using System.Text;
 
 namespace ClientMaui.Pages;
 
@@ -37,7 +35,7 @@ public partial class LoginPage : ContentPage
     }
     private async void LoginBtn_OnClicked(object? sender, EventArgs e)
     {
-       
+
         try
         {
             bool result = await _authentication.Login(UsernameEntry.Text, PasswordEntry.Text);

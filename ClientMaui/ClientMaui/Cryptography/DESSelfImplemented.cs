@@ -251,7 +251,7 @@ namespace ClientMaui.Cryptography
                     col = (col << 1) + (xorResult[start + j] ? 1 : 0);
                 }
                 var sValue = SBoxes[i][row, col];
-                
+
                 for (var j = 0; j < 4; j++)
                 {
                     sBoxOutput[(i * 4) + j] = ((sValue >> (3 - j)) & 1) == 1;
@@ -390,7 +390,7 @@ namespace ClientMaui.Cryptography
 
         public static string Decrypt(string input, byte[] key)
         {
-           
+
             var inputBytes = Convert.FromBase64String(input);
             var blocks = SplitStringToBlocks(inputBytes);
             var encryptedBlocks = blocks.Select(block => SelfDES.DecryptBlock(block, key)).ToList();

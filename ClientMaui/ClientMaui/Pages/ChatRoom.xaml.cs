@@ -270,9 +270,9 @@ public partial class ChatRoom : ContentPage
             // Posunutí scrollu nahoru
             SortMessageStack();
             await Task.Delay(100);
-            
+
             await ScrollView.ScrollToAsync(MessagesStack, ScrollToPosition.Start, true);
-            
+
         }
         catch (Exception)
         {
