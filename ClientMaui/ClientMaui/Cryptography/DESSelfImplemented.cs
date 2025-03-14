@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Security.Cryptography;
+using System.Text;
 
 namespace ClientMaui.Cryptography
 {
@@ -331,29 +332,29 @@ namespace ClientMaui.Cryptography
         }
     }
 
-    class SelfDesOverhead
+    class DesUtils
     {
-        static List<byte[]> SplitStringToBlocks(byte[] inputBytes, int blockSize = 8)
+        public static List<byte[]> SplitStringToBlocks(byte[] inputBytes, int blockSize = 8)
         {
             var output = new List<byte[]>();
             var totalBytes = inputBytes.Length;
-            var coppied = 0;
+            var copiedBytes = 0;
 
-            while (coppied < totalBytes)
+            while (copiedBytes < totalBytes)
             {
-                var remainingBytes = totalBytes - coppied;
+                var remainingBytes = totalBytes - copiedBytes;
                 var block = new byte[blockSize];
 
                 if (remainingBytes >= blockSize)
                 {
-                    Array.Copy(inputBytes, coppied, block, 0, blockSize);
-                    coppied += blockSize;
+                    Array.Copy(inputBytes, copiedBytes, block, 0, blockSize);
+                    copiedBytes += blockSize;
                 }
                 else
                 {
                     // Kopírování zbývajících bajtů
-                    Array.Copy(inputBytes, coppied, block, 0, remainingBytes);
-                    coppied += remainingBytes;
+                    Array.Copy(inputBytes, copiedBytes, block, 0, remainingBytes);
+                    copiedBytes += remainingBytes;
 
                     // Padding podle PKCS7
                     var padValue = (byte)(blockSize - remainingBytes);
@@ -368,36 +369,109 @@ namespace ClientMaui.Cryptography
 
             return output;
         }
-
-
-
-        public static string Encrypt(string input, byte[] key)
+        public static byte[] RemovePadding(byte[] input)
         {
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var blocks = SplitStringToBlocks(inputBytes);
-            var encryptedBlocks = blocks.Select(block => SelfDES.EncryptBlock(block, key)).ToList();
-            var finalArray = new byte[encryptedBlocks.Count * 8];
+            var padValue = input[^1];
+            var output = new byte[input.Length - padValue];
+            Array.Copy(input, output, output.Length);
+            return output;
+        }
+
+        public static string ArrayListToHex(ICollection<byte[]> blocks)
+        {
+            var finalArray = new byte[blocks.Count * 8];
             var count = 0;
-            foreach (var block in encryptedBlocks)
+            foreach (var block in blocks)
             {
                 Array.Copy(block, 0, finalArray, count, 8);
                 count += 8;
             }
             return Convert.ToBase64String(finalArray);
+        }
 
+        public static byte[] GenerateKey()
+        {
+            using var rng = RandomNumberGenerator.Create();
+            var key = new byte[8];
+            rng.GetBytes(key);
+            return key;
+        }
+    }
 
+    class SelfDesOverhead : DesUtils
+    {
+        public static string Encrypt(string input, byte[] key)
+        {
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
+            var encryptedBlocks = blocks.Select(block => SelfDES.EncryptBlock(block, key)).ToList();
+            return ArrayListToHex(encryptedBlocks);
         }
 
         public static string Decrypt(string input, byte[] key)
         {
 
             var inputBytes = Convert.FromBase64String(input);
-            var blocks = SplitStringToBlocks(inputBytes);
+            var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
             var encryptedBlocks = blocks.Select(block => SelfDES.DecryptBlock(block, key)).ToList();
             var output = encryptedBlocks.Aggregate("", (current, block) => current + Encoding.UTF8.GetString(block));
             return output;
         }
 
+    }
+
+    class SelfTripleDesOverhead : DesUtils
+    {
+        public static string Encrypt(string input, byte[] keys)
+        {
+            if (keys.Length != 24)
+            {
+                throw new ArgumentException("Key length must be 24 bytes");
+            }
+            var k1 = new byte[8];
+            var k2 = new byte[8];
+            var k3 = new byte[8];
+            Array.Copy(keys, 0, k1, 0, 8);
+            Array.Copy(keys, 8, k2, 0, 8);
+            Array.Copy(keys, 16, k3, 0, 8);
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
+            var encryptedBlocks = new List<byte[]>();
+
+            foreach (var block in blocks)
+            {
+                var firstEncryption = SelfDES.EncryptBlock(block, k1);
+                var secondDecryption = SelfDES.DecryptBlock(firstEncryption, k2);
+                var thirdEncryption = SelfDES.EncryptBlock(secondDecryption, k3);
+                encryptedBlocks.Add(thirdEncryption);
+            }
+            return ArrayListToHex(encryptedBlocks);
+        }
+        public static string Decrypt(string input, byte[] keys)
+        {
+            if (keys.Length != 24)
+            {
+                throw new ArgumentException("Key length must be 24 bytes");
+            }
+            var k1 = new byte[8];
+            var k2 = new byte[8];
+            var k3 = new byte[8];
+            Array.Copy(keys, 0, k1, 0, 8);
+            Array.Copy(keys, 8, k2, 0, 8);
+            Array.Copy(keys, 16, k3, 0, 8);
+            var inputBytes = Convert.FromBase64String(input);
+            var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
+            var decryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var firstDecryption = SelfDES.DecryptBlock(block, k3);
+                var secondEncryption = SelfDES.EncryptBlock(firstDecryption, k2);
+                var thirdDecryption = SelfDES.DecryptBlock(secondEncryption, k1);
+                decryptedBlocks.Add(thirdDecryption);
+            }
+            var output = decryptedBlocks.Aggregate("", (current, block) => current + Encoding.UTF8.GetString(block));
+            return output;
+        }
     }
 
 
