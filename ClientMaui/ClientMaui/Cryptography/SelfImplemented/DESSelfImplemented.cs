@@ -408,8 +408,15 @@ namespace ClientMaui.Cryptography.SelfImplemented
             rng.GetBytes(key);
             return key;
         }
+        public static byte[] GenerateIV()
+        {
+            using var rng = RandomNumberGenerator.Create();
+            var iv = new byte[8];
+            rng.GetBytes(iv);
+            return iv;
+        }
 
-        public static byte[] XORIV(byte[] block, byte[] iv)
+        public static byte[] XOR(byte[] block, byte[] iv)
         {
             var output = new byte[block.Length];
             for (var i = 0; i < block.Length; i++)
@@ -419,6 +426,70 @@ namespace ClientMaui.Cryptography.SelfImplemented
             return output;
         }
 
+        public static List<byte[]> EncryptWithCBC(byte[] key,
+            byte[] iv,
+            List<byte[]> blocks,
+            Delegate encryptFunc)
+        {
+            var xorBlock = iv;
+            var encryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var xoredBlock = XOR(block, xorBlock);
+                var encryptedBlock = encryptFunc.DynamicInvoke(xoredBlock, key) as byte[];
+                encryptedBlocks.Add(encryptedBlock);
+                xorBlock = encryptedBlock;
+            }
+            return encryptedBlocks;
+        }
+        public static List<byte[]> DecryptWithCBC(byte[] key,
+            byte[] iv,
+            List<byte[]> blocks,
+            Delegate decryptFunc)
+        {
+            var xorBlock = iv;
+            var decryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var decryptedBlock = decryptFunc.DynamicInvoke(block, key) as byte[];
+                var xoredBlock = XOR(decryptedBlock, xorBlock);
+                decryptedBlocks.Add(xoredBlock);
+                xorBlock = block;
+            }
+            return decryptedBlocks;
+        }
+        public static List<byte[]> EncryptWithCFB(byte[] key,
+            byte[] iv,
+            List<byte[]> blocks,
+            Delegate encryptFunc)
+        {
+            var inputBlock = iv;
+            var encryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var encryptedBlock = encryptFunc.DynamicInvoke(inputBlock, key) as byte[];
+                var xoredBlock = XOR(encryptedBlock, block);
+                encryptedBlocks.Add(xoredBlock);
+                inputBlock = xoredBlock;
+            }
+            return encryptedBlocks;
+        }
+        public static List<byte[]> DecryptWithCFB(byte[] key,
+            byte[] iv,
+            List<byte[]> blocks,
+            Delegate decryptFunc)
+        {
+            var inputBlock = iv;
+            var decryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var decryptedBlock = decryptFunc.DynamicInvoke(inputBlock, key) as byte[];
+                var xoredBlock = XOR(decryptedBlock, block);
+                decryptedBlocks.Add(block);
+                inputBlock = xoredBlock;
+            }
+            return decryptedBlocks;
+        }
     }
 
     class SelfDesOverhead : DesUtils
@@ -445,15 +516,9 @@ namespace ClientMaui.Cryptography.SelfImplemented
         {
             var inputBytes = Encoding.UTF8.GetBytes(input);
             var blocks = SplitStringToBlocks(inputBytes);
-            var xorBlock = iv;
-            var encryptedBlocks = new List<byte[]>();
-            foreach (var block in blocks)
-            {
-                var xoredBlock = XORIV(block, xorBlock);
-                var encryptedBlock = SelfDES.EncryptBlock(xoredBlock, key);
-                encryptedBlocks.Add(encryptedBlock);
-                xorBlock = encryptedBlock;
-            }
+
+            var encryptedBlocks =
+                EncryptWithCBC(key, iv, blocks, SelfDES.EncryptBlock);
             return ArrayListToHex(encryptedBlocks);
         }
 
@@ -461,18 +526,30 @@ namespace ClientMaui.Cryptography.SelfImplemented
         {
             var inputBytes = Encoding.UTF8.GetBytes(input);
             var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
-            var decryptedBlocks = new List<byte[]>();
-            var xorBlock = iv;
-            foreach (var block in blocks)
-            {
-                var decryptedBlock = SelfDES.DecryptBlock(block, key);
-                var xoredBlock = XORIV(decryptedBlock, xorBlock);
-                decryptedBlocks.Add(xoredBlock);
-                xorBlock = block;
-            }
+
+            var decryptedBlocks =
+                DecryptWithCBC(key, iv, blocks, SelfDES.DecryptBlock);
             return ArrayListToString(decryptedBlocks);
         }
+        public static string EncryptCFB(string input, byte[] key, byte[] iv)
+        {
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
 
+            var encryptedBlocks =
+                EncryptWithCFB(key, iv, blocks, SelfDES.EncryptBlock);
+            return ArrayListToHex(encryptedBlocks);
+        }
+
+        public static string DecryptCFB(string input, byte[] key, byte[] iv)
+        {
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
+
+            var decryptedBlocks =
+                DecryptWithCFB(key, iv, blocks, SelfDES.DecryptBlock);
+            return ArrayListToString(decryptedBlocks);
+        }
 
     }
 
@@ -525,8 +602,51 @@ namespace ClientMaui.Cryptography.SelfImplemented
                 var thirdDecryption = SelfDES.DecryptBlock(secondEncryption, k1);
                 decryptedBlocks.Add(thirdDecryption);
             }
-            var output = decryptedBlocks.Aggregate("", (current, block) => current + Encoding.UTF8.GetString(block));
+            var output = ArrayListToString(decryptedBlocks);
             return output;
+        }
+        public static string EncryptCBC(string input, byte[] keys, byte[] iv)
+        {
+            if (keys.Length != 24)
+            {
+                throw new ArgumentException("Key length must be 24 bytes");
+            }
+
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
+            var encryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var firstEncryption = SelfDES.EncryptBlock(block, k1);
+                var secondDecryption = SelfDES.DecryptBlock(firstEncryption, k2);
+                encryptedBlocks.Add(secondDecryption);
+            }
+            encryptedBlocks = EncryptWithCBC(k3, iv, encryptedBlocks, SelfDES.EncryptBlock);
+            return ArrayListToHex(encryptedBlocks);
+        }
+        public static string DecryptCBC(string input, byte[] keys, byte[] iv)
+        {
+            if (keys.Length != 24)
+            {
+                throw new ArgumentException("Key length must be 24 bytes");
+            }
+            var k1 = new byte[8];
+            var k2 = new byte[8];
+            var k3 = new byte[8];
+            Array.Copy(keys, 0, k1, 0, 8);
+            Array.Copy(keys, 8, k2, 0, 8);
+            Array.Copy(keys, 16, k3, 0, 8);
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
+            var decryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var firstDecryption = SelfDES.DecryptBlock(block, k1);
+                var secondEncryption = SelfDES.EncryptBlock(firstDecryption, k2);
+                decryptedBlocks.Add(secondEncryption);
+            }
+            decryptedBlocks = DecryptWithCBC(k3, iv, decryptedBlocks, SelfDES.DecryptBlock);
+            return ArrayListToHex(decryptedBlocks);
         }
     }
 
