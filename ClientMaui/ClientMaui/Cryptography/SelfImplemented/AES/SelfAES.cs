@@ -1,9 +1,4 @@
-﻿using ClientMaui.Cryptography.SelfImplemented.DES;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace ClientMaui.Cryptography.SelfImplemented
 {
@@ -56,13 +51,13 @@ namespace ClientMaui.Cryptography.SelfImplemented
         ];
         public static byte[] KeyExpansion(byte[] key)
         {
-            var wordCountForRound = 4;      
+            var wordCountForRound = 4;
             var keyWordCount = 4;  //Počet slov v prvotním klíči   
             var roundCount = 10;
             int totalWords = wordCountForRound * (roundCount + 1);
             byte[] expandedKey = new byte[totalWords * 4];
 
-            
+
             Array.Copy(key, expandedKey, key.Length);
 
             byte[] temp = new byte[4];
@@ -92,7 +87,7 @@ namespace ClientMaui.Cryptography.SelfImplemented
                 // Vytvoření nového slova jako XOR mezi slovem Nk pozic zpět a upraveným temp
                 for (int j = 0; j < 4; j++)
                 {
-                    expandedKey[i * 4 + j] = (byte)(expandedKey[(i - keyWordCount) * 4 + j] ^ temp[j]);
+                    expandedKey[(i * 4) + j] = (byte)(expandedKey[((i - keyWordCount) * 4) + j] ^ temp[j]);
                 }
             }
             return expandedKey;
@@ -100,8 +95,8 @@ namespace ClientMaui.Cryptography.SelfImplemented
         public static void AddRoundKey(byte[,] state, byte[] roundKey)
         {
             for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                state[i, j] ^= roundKey[i + 4 * j];
+                for (int j = 0; j < 4; j++)
+                    state[i, j] ^= roundKey[i + (4 * j)];
         }
         /// <summary>
         /// SubBytes – nahradí každý bajt stavu hodnotou z S-boxu
@@ -109,14 +104,14 @@ namespace ClientMaui.Cryptography.SelfImplemented
         public static void SubBytes(byte[,] state)
         {
             for (var i = 0; i < 4; i++)
-            for (var j = 0; j < 4; j++)
-                state[i, j] = sbox[state[i, j]];
+                for (var j = 0; j < 4; j++)
+                    state[i, j] = sbox[state[i, j]];
         }
         public static void InvSubBytes(byte[,] state)
         {
             for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                state[i, j] = invSbox[state[i, j]];
+                for (int j = 0; j < 4; j++)
+                    state[i, j] = invSbox[state[i, j]];
         }
 
         public static void ShiftRows(byte[,] state)
@@ -172,9 +167,9 @@ namespace ClientMaui.Cryptography.SelfImplemented
                 var a3 = state[3, j];
 
                 var r0 = (byte)(xtime(a0) ^ (a1 ^ xtime(a1)) ^ a2 ^ a3);
-                var r1 = (byte)(a0 ^ xtime(a1) ^ (a2 ^ xtime(a2)) ^ a3);
-                var r2 = (byte)(a0 ^ a1 ^ xtime(a2) ^ (a3 ^ xtime(a3)));
-                var r3 = (byte)((a0 ^ xtime(a0)) ^ a1 ^ a2 ^ xtime(a3));
+                var r1 = (byte)(a0 ^ xtime(a1) ^ a2 ^ xtime(a2) ^ a3);
+                var r2 = (byte)(a0 ^ a1 ^ xtime(a2) ^ a3 ^ xtime(a3));
+                var r3 = (byte)(a0 ^ xtime(a0) ^ a1 ^ a2 ^ xtime(a3));
 
                 state[0, j] = r0;
                 state[1, j] = r1;
@@ -276,64 +271,5 @@ namespace ClientMaui.Cryptography.SelfImplemented
                 output[i] = state[i % 4, i / 4];
             return output;
         }
-    }
-    class SelfAESOverhead : Utils
-    {
-        public static string Encrypt(string input, byte[] key)
-        {
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var blocks = SplitStringToBlocks(inputBytes, 16);
-            var encryptedBlocks = blocks.Select(block => SelfAES.EncryptBlock(block, key)).ToList();
-            return ArrayListToHex(encryptedBlocks, 16);
-        }
-        public static string Decrypt(string input, byte[] key)
-        {
-            var inputBytes = Convert.FromBase64String(input);
-            var blocks = SplitStringToBlocks(RemovePadding(inputBytes), 16);
-            var decryptedBlocks = blocks.Select(block => SelfAES.DecryptBlock(block, key)).ToList();
-
-            return ArrayListToString(decryptedBlocks);
-        }
-        public static string EncryptCBC(string input, byte[] key, byte[] iv)
-        {
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var blocks = SplitStringToBlocks(inputBytes);
-
-            var encryptedBlocks =
-                EncryptWithCBC(key, iv, blocks, SelfAES.EncryptBlock);
-            return ArrayListToHex(encryptedBlocks);
-        }
-
-        public static string DecryptCBC(string input, byte[] key, byte[] iv)
-        {
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
-
-            var decryptedBlocks =
-                DecryptWithCBC(key, iv, blocks, SelfAES.DecryptBlock);
-            return ArrayListToString(decryptedBlocks);
-        }
-        public static string EncryptCFB(string input, byte[] key, byte[] iv)
-        {
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var blocks = SplitStringToBlocks(inputBytes);
-
-            var encryptedBlocks =
-                EncryptWithCFB(key, iv, blocks, SelfAES.EncryptBlock);
-            return ArrayListToHex(encryptedBlocks);
-        }
-
-        public static string DecryptCFB(string input, byte[] key, byte[] iv)
-        {
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
-
-            var decryptedBlocks =
-                DecryptWithCFB(key, iv, blocks, SelfAES.DecryptBlock);
-            return ArrayListToString(decryptedBlocks);
-        }
-
-
-
     }
 }

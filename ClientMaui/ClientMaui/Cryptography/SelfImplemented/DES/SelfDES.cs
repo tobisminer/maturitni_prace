@@ -147,9 +147,9 @@
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    if (i * 8 + j < bitCount)
+                    if ((i * 8) + j < bitCount)
                     {
-                        bits[i * 8 + j] = (input[i] & 1 << 7 - j) != 0;
+                        bits[(i * 8) + j] = (input[i] & (1 << (7 - j))) != 0;
                     }
                 }
             }
@@ -165,9 +165,9 @@
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    if (bits[i * 8 + j])
+                    if (bits[(i * 8) + j])
                     {
-                        bytes[i] |= (byte)(1 << 7 - j);
+                        bytes[i] |= (byte)(1 << (7 - j));
                     }
                 }
             }
@@ -252,7 +252,7 @@
 
                 for (var j = 0; j < 4; j++)
                 {
-                    sBoxOutput[i * 4 + j] = (sValue >> 3 - j & 1) == 1;
+                    sBoxOutput[(i * 4) + j] = ((sValue >> (3 - j)) & 1) == 1;
                 }
             }
 

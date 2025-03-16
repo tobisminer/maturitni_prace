@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
+
 namespace ClientMaui.Cryptography.SelfImplemented;
 
 class Utils
@@ -60,6 +61,15 @@ class Utils
         return input[..^padValue];
     }
 
+    public static List<byte[]> RemovePaddingFromList(List<byte[]> input)
+    {
+        var lastBlock = input[^1];
+        var output = new List<byte[]>();
+        output.AddRange(input[..^1]);
+        output.Add(RemovePadding(lastBlock));
+        return output;
+    }
+
     public static string ArrayListToHex(ICollection<byte[]> blocks, int blockSize = 8)
     {
         var finalArray = new byte[blocks.Count * blockSize];
@@ -77,10 +87,10 @@ class Utils
         return blocks.Aggregate("", (current, block) => current + Encoding.UTF8.GetString(block));
     }
 
-    public static byte[] GenerateKey()
+    public static byte[] GenerateKey(int length = 8)
     {
         using var rng = RandomNumberGenerator.Create();
-        var key = new byte[8];
+        var key = new byte[length];
         rng.GetBytes(key);
         return key;
     }
@@ -91,10 +101,10 @@ class Utils
         rng.GetBytes(key);
         return key;
     }
-    public static byte[] GenerateIV()
+    public static byte[] GenerateIV(int length = 8)
     {
         using var rng = RandomNumberGenerator.Create();
-        var iv = new byte[8];
+        var iv = new byte[length];
         rng.GetBytes(iv);
         return iv;
     }

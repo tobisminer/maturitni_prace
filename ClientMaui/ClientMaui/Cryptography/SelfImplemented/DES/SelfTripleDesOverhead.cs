@@ -32,7 +32,7 @@ class SelfTripleDesOverhead : Utils
         }
         var (k1, k2, k3) = SplitKey(keys);
         var inputBytes = Convert.FromBase64String(input);
-        var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
+        var blocks = SplitStringToBlocks(inputBytes);
         var decryptedBlocks = new List<byte[]>();
         foreach (var block in blocks)
         {
@@ -41,7 +41,9 @@ class SelfTripleDesOverhead : Utils
             var thirdDecryption = SelfDES.DecryptBlock(secondEncryption, k1);
             decryptedBlocks.Add(thirdDecryption);
         }
+        decryptedBlocks = RemovePaddingFromList(decryptedBlocks);
         var output = ArrayListToString(decryptedBlocks);
+
         return output;
     }
     public static string EncryptCBC(string input, byte[] keys, byte[] iv)
@@ -81,6 +83,7 @@ class SelfTripleDesOverhead : Utils
             decryptedBlocks.Add(secondEncryption);
         }
         decryptedBlocks = DecryptWithCBC(k3, iv, decryptedBlocks, SelfDES.DecryptBlock);
+        decryptedBlocks = RemovePaddingFromList(decryptedBlocks);
         return ArrayListToHex(decryptedBlocks);
     }
     public static string EncryptCFB(string input, byte[] keys, byte[] iv)
@@ -120,6 +123,7 @@ class SelfTripleDesOverhead : Utils
             decryptedBlocks.Add(secondEncryption);
         }
         decryptedBlocks = DecryptWithCFB(k3, iv, decryptedBlocks, SelfDES.DecryptBlock);
+        decryptedBlocks = RemovePaddingFromList(decryptedBlocks);
         return ArrayListToHex(decryptedBlocks);
     }
 }
