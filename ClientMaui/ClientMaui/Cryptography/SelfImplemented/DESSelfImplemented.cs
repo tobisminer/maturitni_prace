@@ -490,6 +490,22 @@ namespace ClientMaui.Cryptography.SelfImplemented
             }
             return decryptedBlocks;
         }
+        public static (byte[], byte[], byte[]) SplitKey(byte[] key)
+        {
+            if (key.Length != 24)
+            {
+                throw new ArgumentException("Key length must be 24 bytes");
+            }
+            var k1 = new byte[8];
+            var k2 = new byte[8];
+            var k3 = new byte[8];
+            Array.Copy(key, 0, k1, 0, 8);
+            Array.Copy(key, 8, k2, 0, 8);
+            Array.Copy(key, 16, k3, 0, 8);
+            return (k1, k2, k3);
+        }
+
+
     }
 
     class SelfDesOverhead : DesUtils
@@ -561,12 +577,7 @@ namespace ClientMaui.Cryptography.SelfImplemented
             {
                 throw new ArgumentException("Key length must be 24 bytes");
             }
-            var k1 = new byte[8];
-            var k2 = new byte[8];
-            var k3 = new byte[8];
-            Array.Copy(keys, 0, k1, 0, 8);
-            Array.Copy(keys, 8, k2, 0, 8);
-            Array.Copy(keys, 16, k3, 0, 8);
+            var (k1, k2, k3) = SplitKey(keys);
             var inputBytes = Encoding.UTF8.GetBytes(input);
             var blocks = SplitStringToBlocks(inputBytes);
             var encryptedBlocks = new List<byte[]>();
@@ -586,12 +597,7 @@ namespace ClientMaui.Cryptography.SelfImplemented
             {
                 throw new ArgumentException("Key length must be 24 bytes");
             }
-            var k1 = new byte[8];
-            var k2 = new byte[8];
-            var k3 = new byte[8];
-            Array.Copy(keys, 0, k1, 0, 8);
-            Array.Copy(keys, 8, k2, 0, 8);
-            Array.Copy(keys, 16, k3, 0, 8);
+            var (k1, k2, k3) = SplitKey(keys);
             var inputBytes = Convert.FromBase64String(input);
             var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
             var decryptedBlocks = new List<byte[]>();
@@ -612,6 +618,7 @@ namespace ClientMaui.Cryptography.SelfImplemented
                 throw new ArgumentException("Key length must be 24 bytes");
             }
 
+            var (k1, k2, k3) = SplitKey(keys);
             var inputBytes = Encoding.UTF8.GetBytes(input);
             var blocks = SplitStringToBlocks(inputBytes);
             var encryptedBlocks = new List<byte[]>();
@@ -630,12 +637,7 @@ namespace ClientMaui.Cryptography.SelfImplemented
             {
                 throw new ArgumentException("Key length must be 24 bytes");
             }
-            var k1 = new byte[8];
-            var k2 = new byte[8];
-            var k3 = new byte[8];
-            Array.Copy(keys, 0, k1, 0, 8);
-            Array.Copy(keys, 8, k2, 0, 8);
-            Array.Copy(keys, 16, k3, 0, 8);
+            var (k1, k2, k3) = SplitKey(keys);
             var inputBytes = Encoding.UTF8.GetBytes(input);
             var blocks = SplitStringToBlocks(inputBytes);
             var decryptedBlocks = new List<byte[]>();
@@ -646,6 +648,45 @@ namespace ClientMaui.Cryptography.SelfImplemented
                 decryptedBlocks.Add(secondEncryption);
             }
             decryptedBlocks = DecryptWithCBC(k3, iv, decryptedBlocks, SelfDES.DecryptBlock);
+            return ArrayListToHex(decryptedBlocks);
+        }
+        public static string EncryptCFB(string input, byte[] keys, byte[] iv)
+        {
+            if (keys.Length != 24)
+            {
+                throw new ArgumentException("Key length must be 24 bytes");
+            }
+
+            var (k1, k2, k3) = SplitKey(keys);
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
+            var encryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var firstEncryption = SelfDES.EncryptBlock(block, k1);
+                var secondDecryption = SelfDES.DecryptBlock(firstEncryption, k2);
+                encryptedBlocks.Add(secondDecryption);
+            }
+            encryptedBlocks = EncryptWithCFB(k3, iv, encryptedBlocks, SelfDES.EncryptBlock);
+            return ArrayListToHex(encryptedBlocks);
+        }
+        public static string DecryptCFB(string input, byte[] keys, byte[] iv)
+        {
+            if (keys.Length != 24)
+            {
+                throw new ArgumentException("Key length must be 24 bytes");
+            }
+            var (k1, k2, k3) = SplitKey(keys);
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
+            var decryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var firstDecryption = SelfDES.DecryptBlock(block, k1);
+                var secondEncryption = SelfDES.EncryptBlock(firstDecryption, k2);
+                decryptedBlocks.Add(secondEncryption);
+            }
+            decryptedBlocks = DecryptWithCFB(k3, iv, decryptedBlocks, SelfDES.DecryptBlock);
             return ArrayListToHex(decryptedBlocks);
         }
     }
