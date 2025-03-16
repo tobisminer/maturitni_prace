@@ -42,10 +42,22 @@ class Utils
     }
     public static byte[] RemovePadding(byte[] input)
     {
+        if (input.Length == 0)
+            throw new ArgumentException("Input data cannot be empty.");
+
         var padValue = input[^1];
-        var output = new byte[input.Length - padValue];
-        Array.Copy(input, output, output.Length);
-        return output;
+
+        if (padValue <= 0 || padValue > input.Length)
+            return input;
+
+        // Ověření, zda všechny bajty odpovídají očekávané hodnotě paddingu
+        for (int i = 1; i <= padValue; i++)
+        {
+            if (input[^i] != padValue)
+                return input;
+        }
+
+        return input[..^padValue];
     }
 
     public static string ArrayListToHex(ICollection<byte[]> blocks, int blockSize = 8)
