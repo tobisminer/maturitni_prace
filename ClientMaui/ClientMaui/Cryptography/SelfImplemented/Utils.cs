@@ -1,9 +1,9 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace ClientMaui.Cryptography.SelfImplemented.DES;
+namespace ClientMaui.Cryptography.SelfImplemented;
 
-class DesUtils
+class Utils
 {
     public static List<byte[]> SplitStringToBlocks(byte[] inputBytes, int blockSize = 8)
     {

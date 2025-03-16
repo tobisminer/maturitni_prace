@@ -2,7 +2,7 @@
 
 namespace ClientMaui.Cryptography.SelfImplemented.DES;
 
-class SelfDesOverhead : DesUtils
+class SelfDesOverhead : Utils
 {
     public static string Encrypt(string input, byte[] key)
     {
