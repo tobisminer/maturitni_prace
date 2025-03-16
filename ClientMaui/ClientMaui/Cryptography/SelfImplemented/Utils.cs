@@ -48,14 +48,14 @@ class Utils
         return output;
     }
 
-    public static string ArrayListToHex(ICollection<byte[]> blocks)
+    public static string ArrayListToHex(ICollection<byte[]> blocks, int blockSize = 8)
     {
-        var finalArray = new byte[blocks.Count * 8];
+        var finalArray = new byte[blocks.Count * blockSize];
         var count = 0;
         foreach (var block in blocks)
         {
-            Array.Copy(block, 0, finalArray, count, 8);
-            count += 8;
+            Array.Copy(block, 0, finalArray, count, blockSize);
+            count += blockSize;
         }
         return Convert.ToBase64String(finalArray);
     }
