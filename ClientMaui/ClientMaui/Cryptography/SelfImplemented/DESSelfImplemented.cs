@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace ClientMaui.Cryptography
+namespace ClientMaui.Cryptography.SelfImplemented
 {
     internal class SelfDES
     {
@@ -150,9 +150,9 @@ namespace ClientMaui.Cryptography
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    if ((i * 8) + j < bitCount)
+                    if (i * 8 + j < bitCount)
                     {
-                        bits[(i * 8) + j] = (input[i] & (1 << (7 - j))) != 0;
+                        bits[i * 8 + j] = (input[i] & 1 << 7 - j) != 0;
                     }
                 }
             }
@@ -168,9 +168,9 @@ namespace ClientMaui.Cryptography
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    if (bits[(i * 8) + j])
+                    if (bits[i * 8 + j])
                     {
-                        bytes[i] |= (byte)(1 << (7 - j));
+                        bytes[i] |= (byte)(1 << 7 - j);
                     }
                 }
             }
@@ -255,7 +255,7 @@ namespace ClientMaui.Cryptography
 
                 for (var j = 0; j < 4; j++)
                 {
-                    sBoxOutput[(i * 4) + j] = ((sValue >> (3 - j)) & 1) == 1;
+                    sBoxOutput[i * 4 + j] = (sValue >> 3 - j & 1) == 1;
                 }
             }
 
@@ -389,6 +389,11 @@ namespace ClientMaui.Cryptography
             return Convert.ToBase64String(finalArray);
         }
 
+        public static string ArrayListToString(ICollection<byte[]> blocks)
+        {
+            return blocks.Aggregate("", (current, block) => current + Encoding.UTF8.GetString(block));
+        }
+
         public static byte[] GenerateKey()
         {
             using var rng = RandomNumberGenerator.Create();
@@ -396,6 +401,24 @@ namespace ClientMaui.Cryptography
             rng.GetBytes(key);
             return key;
         }
+        public static byte[] GenerateTripleDesKey()
+        {
+            using var rng = RandomNumberGenerator.Create();
+            var key = new byte[24];
+            rng.GetBytes(key);
+            return key;
+        }
+
+        public static byte[] XORIV(byte[] block, byte[] iv)
+        {
+            var output = new byte[block.Length];
+            for (var i = 0; i < block.Length; i++)
+            {
+                output[i] = (byte)(block[i] ^ iv[i % block.Length]);
+            }
+            return output;
+        }
+
     }
 
     class SelfDesOverhead : DesUtils
@@ -413,10 +436,43 @@ namespace ClientMaui.Cryptography
 
             var inputBytes = Convert.FromBase64String(input);
             var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
-            var encryptedBlocks = blocks.Select(block => SelfDES.DecryptBlock(block, key)).ToList();
-            var output = encryptedBlocks.Aggregate("", (current, block) => current + Encoding.UTF8.GetString(block));
-            return output;
+            var decryptedBlocks = blocks.Select(block => SelfDES.DecryptBlock(block, key)).ToList();
+           
+            return ArrayListToString(decryptedBlocks);
         }
+
+        public static string EncryptCBC(string input, byte[] key, byte[] iv)
+        {
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(inputBytes);
+            var xorBlock = iv;
+            var encryptedBlocks = new List<byte[]>();
+            foreach (var block in blocks)
+            {
+                var xoredBlock = XORIV(block, xorBlock);
+                var encryptedBlock = SelfDES.EncryptBlock(xoredBlock, key);
+                encryptedBlocks.Add(encryptedBlock);
+                xorBlock = encryptedBlock;
+            }
+            return ArrayListToHex(encryptedBlocks);
+        }
+
+        public static string DecryptCBC(string input, byte[] key, byte[] iv)
+        {
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var blocks = SplitStringToBlocks(RemovePadding(inputBytes));
+            var decryptedBlocks = new List<byte[]>();
+            var xorBlock = iv;
+            foreach (var block in blocks)
+            {
+                var decryptedBlock = SelfDES.DecryptBlock(block, key);
+                var xoredBlock = XORIV(decryptedBlock, xorBlock);
+                decryptedBlocks.Add(xoredBlock);
+                xorBlock = block;
+            }
+            return ArrayListToString(decryptedBlocks);
+        }
+
 
     }
 
