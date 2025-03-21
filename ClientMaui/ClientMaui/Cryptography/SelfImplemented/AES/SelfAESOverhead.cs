@@ -42,7 +42,7 @@ class SelfAESOverhead : Utils
     public static string EncryptCFB(string input, byte[] key, byte[] iv)
     {
         var inputBytes = Encoding.UTF8.GetBytes(input);
-        var blocks = SplitStringToBlocks(inputBytes,16);
+        var blocks = SplitStringToBlocks(inputBytes, 16);
 
         var encryptedBlocks =
             EncryptWithCFB(key, iv, blocks, SelfAES.EncryptBlock);
@@ -53,7 +53,7 @@ class SelfAESOverhead : Utils
     {
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var blocks = SplitStringToBlocks(inputBytes, 16);
-      
+
         var decryptedBlocks =
             DecryptWithCFB(key, iv, blocks, SelfAES.DecryptBlock);
         decryptedBlocks = RemovePaddingFromList(decryptedBlocks);

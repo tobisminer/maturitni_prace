@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace ClientMaui.Cryptography.SelfImplemented
+﻿namespace ClientMaui.Cryptography.SelfImplemented
 {
     internal class SelfAES
     {
