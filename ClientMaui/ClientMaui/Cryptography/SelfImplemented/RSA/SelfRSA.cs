@@ -1,6 +1,21 @@
-﻿using System.Numerics;
+﻿using ClientMaui.Cryptography.SelfImplemented;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+
+using ClientMaui.API;
+using ClientMaui.Cryptography;
+using ClientMaui.Cryptography.SelfImplemented.RSA;
+using ClientMaui.Database;
+using ClientMaui.Database.Entities;
+using ClientMaui.Entities;
+using ClientMaui.Entities.Room;
+
+using Newtonsoft.Json;
+
+using RestSharp;
+
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ClientMaui.Cryptography.SelfImplemented.RSA
 {
@@ -188,9 +203,133 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
             var bytes = result.Select(bi => (char)(int)bi).ToArray();
             return new string(bytes);
         }
+    }
+}
+class SelfRSACryptography : ICryptography
+{
+    public string key
+    {
+        get => publicKey;
+        set => publicKey = value;
+    } // This is the string public key
+
+    private string publicKey { get; set; }
+    private string privateKey { get; set; }
+
+    public string? otherPublicKey { get; set; }
+
+    public Endpoint endpoint { get; set; }
+    public Room room { get; set; }
+    public string GenerateKey()
+    {
+        var (E, N, D) = SelfRSA.GenerateRSAKeyPair();
+        publicKey = $"{E}|{N}";
+        privateKey = $"{D}|{N}";
+        Database.AddValueToSecureStorage("PublicKey", publicKey, endpoint.username,
+            room.id);
+        Database.AddValueToSecureStorage("PrivateKey", privateKey, endpoint.username, room.id);
+
+        return key;
+    }
+    public async Task<bool> LoadKey()
+    {
+        if (string.IsNullOrEmpty(publicKey) == false && string.IsNullOrEmpty(privateKey) == false)
+            return true;
 
 
+        var publicKeyString = await Database.GetValueFromSecureStorage("PublicKey", endpoint.username, room.id);
+        var privateKeyString = await Database.GetValueFromSecureStorage("PrivateKey", endpoint.username, room.id);
 
+        if (string.IsNullOrEmpty(publicKeyString) || string.IsNullOrEmpty(privateKeyString))
+            return false;
 
+        publicKey = publicKeyString;
+        privateKey = privateKeyString;
+
+        return true;
+    }
+    public async Task<bool> GetOtherPublicKey()
+    {
+        var otherPublicKeyServer = (await endpoint.Request(APIEndpoints.RoomEndpoints.GetKey, id: room.id)).Content;
+        if (string.IsNullOrEmpty(otherPublicKeyServer))
+        {
+            return false;
+        }
+        otherPublicKey = Base64Decode(otherPublicKeyServer);
+        return true;
+    }
+
+    public static string Base64Encode(string plainText)
+    {
+        var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+        return Convert.ToBase64String(plainTextBytes);
+    }
+
+    public static string Base64Decode(string base64EncodedData)
+    {
+        base64EncodedData =
+            base64EncodedData.Substring(1, base64EncodedData.Length - 2);
+        var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+        return Encoding.UTF8.GetString(base64EncodedBytes);
+    }
+
+    private string EncryptByMyPublicKey(string text)
+    {
+       var split = publicKey.Split("|");
+        var E = BigInteger.Parse(split[0]);
+        var N = BigInteger.Parse(split[1]);
+        return SelfRSA.Encrypt(text, E, N);
+    }
+    public async Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
+    {
+        if (otherPublicKey == null)
+        {
+            var result = await GetOtherPublicKey();
+            if (!result)
+                return text;
+        }
+        var split = otherPublicKey.Split("|");
+        var E = BigInteger.Parse(split[0]);
+        var N = BigInteger.Parse(split[1]);
+        var cypherString = SelfRSA.Encrypt(text, E, N);
+
+        var mess = new MessageDbEntity
+        {
+            Message = EncryptByMyPublicKey(text),
+            EncryptedMessage = cypherString
+        };
+        Database.AddMessage(mess);
+
+        return SelfRSA.Encrypt(text, E, N);
+    }
+    public async Task<string> Decrypt(string encryptedMessage, BlockCypherMode mode = BlockCypherMode.None, bool isIncoming = false)
+    {
+        if (!isIncoming) // message is coming from me
+        {
+            var mess = await Database.GetMessagesByEncryptedString(encryptedMessage);
+            encryptedMessage = mess?.Message ?? encryptedMessage;
+        }
+        await LoadKey();
+        var split = privateKey.Split("|");
+        var D = BigInteger.Parse(split[0]);
+        var N = BigInteger.Parse(split[1]);
+        return SelfRSA.Decrypt(encryptedMessage, D, N);
+    }
+
+    public static async Task SetupForRsa(Endpoint endpoint,
+        Room room,
+        SelfRSACryptography instance)
+    {
+        instance.endpoint = endpoint;
+        instance.room = room;
+        _ = await instance.GetOtherPublicKey();
+
+        if (await instance.LoadKey()) return;
+        var myNewPublicKey = instance.GenerateKey();
+        var myPublicKeyJson = new Key
+        {
+            key = Base64Encode(myNewPublicKey)
+        };
+        await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
     }
 }
