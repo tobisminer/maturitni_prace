@@ -38,6 +38,7 @@ class SelfDesOverhead : Utils
 
         var encryptedBlocks =
             EncryptWithCBC(key, iv, blocks, SelfDES.EncryptBlock);
+
         var text = ByteListToString(encryptedBlocks);
         return $"{Convert.ToBase64String(iv)}{IVConnectionString}{text}";
     }
