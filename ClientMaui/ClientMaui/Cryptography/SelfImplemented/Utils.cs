@@ -70,16 +70,15 @@ class Utils
         return output;
     }
 
-    public static string ArrayListToHex(ICollection<byte[]> blocks, int blockSize = 8)
+    public static string ByteListToString(ICollection<byte[]> blocks, int blockSize = 8)
     {
-        var finalArray = new byte[blocks.Count * blockSize];
-        var count = 0;
-        foreach (var block in blocks)
-        {
-            Array.Copy(block, 0, finalArray, count, blockSize);
-            count += blockSize;
-        }
-        return Convert.ToBase64String(finalArray);
+        var base64Strings = blocks.Select(Convert.ToBase64String);
+        return string.Join(":", base64Strings);
+    }
+    public static List<byte[]> StringToByteList(string base64String)
+    {
+        var base64Strings = base64String.Split(':');
+        return base64Strings.Select(Convert.FromBase64String).ToList();
     }
 
     public static string ArrayListToString(ICollection<byte[]> blocks)
@@ -96,10 +95,7 @@ class Utils
     }
     public static byte[] GenerateTripleDesKey()
     {
-        using var rng = RandomNumberGenerator.Create();
-        var key = new byte[24];
-        rng.GetBytes(key);
-        return key;
+      return GenerateKey(24);
     }
     public static byte[] GenerateIV(int length = 8)
     {
@@ -178,8 +174,8 @@ class Utils
         {
             var decryptedBlock = decryptFunc.DynamicInvoke(inputBlock, key) as byte[];
             var xoredBlock = XOR(decryptedBlock, block);
-            decryptedBlocks.Add(block);
-            inputBlock = xoredBlock;
+            decryptedBlocks.Add(xoredBlock);
+            inputBlock = block;
         }
         return decryptedBlocks;
     }

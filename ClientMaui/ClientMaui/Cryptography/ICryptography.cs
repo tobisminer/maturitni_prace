@@ -2,6 +2,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using ClientMaui.Cryptography.SelfImplemented.DES;
+
 namespace ClientMaui.Cryptography
 {
     public interface ICryptography
@@ -26,6 +28,9 @@ namespace ClientMaui.Cryptography
                 "RC4" => new RCFour(),
                 "RSA" => new RSAInstance(),
                 "RSA+AES" => new RSAandAES(),
+                "Self DES" => new SelfDesCryptography(),
+                "Self Triple DES" => new SelfTripleDesCryptography(),
+
                 _ => new NoEncryption()
             };
 
@@ -41,6 +46,8 @@ namespace ClientMaui.Cryptography
                 "RC4" => false,
                 "RSA" => false,
                 "RSA+AES" => true,
+                "Self DES" => true,
+                "Self Triple DES" => true,
                 _ => false
             };
         }

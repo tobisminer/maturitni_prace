@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 using System.Security.Cryptography;
-
+using System.Text;
 
 namespace ClientMaui.Cryptography.SelfImplemented.RSA
 {
@@ -24,6 +24,7 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
         }
         static BigInteger modPow(BigInteger number, BigInteger power, BigInteger mod)
         {
+            //return BigInteger.ModPow(number, power, mod);
             var powers = splitNumberToSmallerPowers(power);
             var lookupTable = new Dictionary<BigInteger, BigInteger>();
             if (powers.Contains(1))
@@ -43,8 +44,8 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
         }
         static BigInteger GenerateRandomBigInteger(int bitLength)
         {
-            int byteLength = (bitLength + 7) / 8;
-            byte[] bytes = new byte[byteLength];
+            var byteLength = (bitLength + 7) / 8;
+            var bytes = new byte[byteLength];
             RandomNumberGenerator.Fill(bytes);
 
             // Zajistíme, že nejvyšší bit je nastaven, aby číslo mělo správnou bitovou délku
@@ -61,8 +62,8 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
             if (n % 2 == 0) return false;
 
             // Rozložíme n-1 na d * 2^r
-            BigInteger d = n - 1;
-            int r = 0;
+            var d = n - 1;
+            var r = 0;
             while (d % 2 == 0)
             {
                 d /= 2;
@@ -70,21 +71,20 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
             }
 
             // Opakujeme test k-krát
-            for (int i = 0; i < k; i++)
+            for (var i = 0; i < k; i++)
             {
-                BigInteger a = (GenerateRandomBigInteger(n.ToByteArray().Length * 8) % (n - 3)) + 2;
-                BigInteger x = BigInteger.ModPow(a, d, n);
+                var a = (GenerateRandomBigInteger(n.ToByteArray().Length * 8) % (n - 3)) + 2;
+                var x = BigInteger.ModPow(a, d, n);
                 if (x == 1 || x == n - 1) continue;
 
-                bool composite = true;
-                for (int j = 0; j < r - 1; j++)
+                var composite = true;
+                for (var j = 0; j < r - 1; j++)
                 {
                     x = BigInteger.ModPow(x, 2, n);
-                    if (x == n - 1)
-                    {
-                        composite = false;
-                        break;
-                    }
+
+                    if (x != n - 1) continue;
+                    composite = false;
+                    break;
                 }
                 if (composite) return false;
             }
@@ -139,7 +139,7 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
 
         public static (BigInteger E, BigInteger N, BigInteger D) GenerateRSAKeyPair(int keySize = 1024)
         {
-            GC.TryStartNoGCRegion(keySize * 1000 * 1000, keySize);
+            //GC.TryStartNoGCRegion(keySize * 1000 * 1000, keySize);
             var size = keySize / 2;
             var P = GeneratePrime(size);
             var Q = GeneratePrime(size);
@@ -160,7 +160,7 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
                 }
                 E++;
             }
-            GC.EndNoGCRegion();
+            //GC.EndNoGCRegion();
             return (E, N, D);
         }
         static BigInteger EncryptCharacter(int message, BigInteger E, BigInteger N)
@@ -171,14 +171,19 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
         {
             return modPow(message, D, N);
         }
-        public static List<BigInteger> Encrypt(string message, BigInteger E, BigInteger N)
+        public static string Encrypt(string message, BigInteger E, BigInteger N)
         {
             var result = message.Select(character => EncryptCharacter(character, E, N)).ToList();
-            return result;
+            var text = string.Join(" ", result);
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
+
         }
-        public static string Decrypt(List<BigInteger> message, BigInteger D, BigInteger N)
+        public static string Decrypt(string message, BigInteger D, BigInteger N)
         {
-            var result = message.Select(character => DecryptCharacter(character, D, N)).ToList();
+            var messageBytes = Convert.FromBase64String(message);
+            var text = Encoding.UTF8.GetString(messageBytes);
+            var messageArray = text.Split(" ").Select(BigInteger.Parse).ToList();
+            var result = messageArray.Select(character => DecryptCharacter(character, D, N)).ToList();
 
             var bytes = result.Select(bi => (char)(int)bi).ToArray();
             return new string(bytes);

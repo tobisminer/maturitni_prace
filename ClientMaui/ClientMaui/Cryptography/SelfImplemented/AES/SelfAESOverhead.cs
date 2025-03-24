@@ -9,7 +9,7 @@ class SelfAESOverhead : Utils
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var blocks = SplitStringToBlocks(inputBytes, 16);
         var encryptedBlocks = blocks.Select(block => SelfAES.EncryptBlock(block, key)).ToList();
-        return ArrayListToHex(encryptedBlocks, 16);
+        return ByteListToString(encryptedBlocks, 16);
     }
     public static string Decrypt(string input, byte[] key)
     {
@@ -26,7 +26,7 @@ class SelfAESOverhead : Utils
 
         var encryptedBlocks =
             EncryptWithCBC(key, iv, blocks, SelfAES.EncryptBlock);
-        return ArrayListToHex(encryptedBlocks);
+        return ByteListToString(encryptedBlocks);
     }
 
     public static string DecryptCBC(string input, byte[] key, byte[] iv)
@@ -46,7 +46,7 @@ class SelfAESOverhead : Utils
 
         var encryptedBlocks =
             EncryptWithCFB(key, iv, blocks, SelfAES.EncryptBlock);
-        return ArrayListToHex(encryptedBlocks);
+        return ByteListToString(encryptedBlocks);
     }
 
     public static string DecryptCFB(string input, byte[] key, byte[] iv)
