@@ -52,7 +52,7 @@ class Utils
             return input;
 
         // Ověření, zda všechny bajty odpovídají očekávané hodnotě paddingu
-        for (int i = 1; i <= padValue; i++)
+        for (var i = 1; i <= padValue; i++)
         {
             if (input[^i] != padValue)
                 return input;
@@ -73,11 +73,14 @@ class Utils
     public static string ByteListToString(ICollection<byte[]> blocks, int blockSize = 8)
     {
         var base64Strings = blocks.Select(Convert.ToBase64String);
-        return string.Join(":", base64Strings);
+        var text = Encoding.UTF8.GetBytes(string.Join(":", base64Strings));
+
+        return Convert.ToBase64String(text);
     }
     public static List<byte[]> StringToByteList(string base64String)
     {
-        var base64Strings = base64String.Split(':');
+        var text = Encoding.UTF8.GetString(Convert.FromBase64String(base64String));
+        var base64Strings = text.Split(':');
         return base64Strings.Select(Convert.FromBase64String).ToList();
     }
 
