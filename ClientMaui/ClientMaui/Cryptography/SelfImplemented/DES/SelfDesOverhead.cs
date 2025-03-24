@@ -45,8 +45,8 @@ class SelfDesOverhead : Utils
     public static string DecryptCBC(string input, byte[] key)
     {
         var (iv, cypherText) = SplitIV(input);
-        var inputBytes = Encoding.UTF8.GetBytes(cypherText);
-        var blocks = SplitStringToBlocks(inputBytes);
+
+        var blocks = StringToByteList(cypherText);
 
         var decryptedBlocks =
             DecryptWithCBC(key, iv, blocks, SelfDES.DecryptBlock);
@@ -68,8 +68,7 @@ class SelfDesOverhead : Utils
     public static string DecryptCFB(string input, byte[] key)
     {
         var (iv, cypherText) = SplitIV(input);
-        var inputBytes = Encoding.UTF8.GetBytes(cypherText);
-        var blocks = SplitStringToBlocks(inputBytes);
+        var blocks = StringToByteList(cypherText);
 
         var decryptedBlocks =
             DecryptWithCFB(key, iv, blocks, SelfDES.EncryptBlock);
