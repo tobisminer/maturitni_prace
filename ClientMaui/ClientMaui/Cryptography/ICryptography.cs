@@ -2,7 +2,9 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using ClientMaui.Cryptography.SelfImplemented;
 using ClientMaui.Cryptography.SelfImplemented.DES;
+using ClientMaui.Cryptography.SelfImplemented.RSA;
 
 namespace ClientMaui.Cryptography
 {
@@ -30,6 +32,8 @@ namespace ClientMaui.Cryptography
                 "RSA+AES" => new RSAandAES(),
                 "Self DES" => new SelfDesCryptography(),
                 "Self Triple DES" => new SelfTripleDesCryptography(),
+                "Self AES" => new SelfAesCryptography(),
+                "Self RSA" => new SelfRSACryptography(),
 
                 _ => new NoEncryption()
             };
@@ -39,14 +43,12 @@ namespace ClientMaui.Cryptography
         {
             return friendlyString switch
             {
-                "No Encryption" => false,
                 "DES" => true,
                 "AES" => true,
                 "Triple DES" => true,
-                "RC4" => false,
-                "RSA" => false,
                 "RSA+AES" => true,
                 "Self DES" => true,
+                "Self AES" => true,
                 "Self Triple DES" => true,
                 _ => false
             };
