@@ -169,6 +169,12 @@ public partial class ChatRoom : ContentPage
             await RSAInstance.SetupForRsa(endpoint, room, rsaInstance);
             return;
         }
+        if (cypher.GetType() == typeof(SelfRSACryptography))
+        {
+            var instance = (SelfRSACryptography)cypher;
+            await SelfRSACryptography.SetupForRsa(endpoint, room, instance);
+            return;
+        }
 
         if (cypher.GetType() == typeof(RSAandAES))
         {
