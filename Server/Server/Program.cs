@@ -22,7 +22,14 @@ if (builder.Environment.IsDevelopment())
         options.Filters.Add<LoggingFilter>();
     });
 }
-
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.RedirectStatusCode = 308;
+        options.HttpsPort = 443;
+    });
+}
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
     );
@@ -53,7 +60,7 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            []
         }
     });
 });

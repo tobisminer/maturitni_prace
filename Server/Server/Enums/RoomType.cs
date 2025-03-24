@@ -11,7 +11,13 @@ namespace Server.Enums
         AES,
         ARCFOUR,
         RSA,
-        RSA_AES
+        RSA_AES,
+        SELFDES,
+        SELFTRIPLEDES,
+        SELFAES,
+        SELFRSA,
+        SELFRSA_DES,
+        SELFRSA_AES
     }
 
     public static class RoomTypesExtensions
@@ -27,6 +33,12 @@ namespace Server.Enums
                 RoomType.ARCFOUR => "RC4",
                 RoomType.RSA => "RSA",
                 RoomType.RSA_AES => "RSA+AES",
+                RoomType.SELFDES => "Self DES",
+                RoomType.SELFTRIPLEDES => "Self Triple DES",
+                RoomType.SELFAES => "Self AES",
+                RoomType.SELFRSA => "Self RSA",
+                RoomType.SELFRSA_DES => "Self RSA+DES",
+                RoomType.SELFRSA_AES => "Self RSA+AES",
                 _ => "Unknown"
             };
         }
@@ -41,6 +53,12 @@ namespace Server.Enums
                 "RC4" => RoomType.ARCFOUR,
                 "RSA" => RoomType.RSA,
                 "RSA+AES" => RoomType.RSA_AES,
+                "Self DES" => RoomType.SELFDES,
+                "Self Triple DES" => RoomType.SELFTRIPLEDES,
+                "Self AES" => RoomType.SELFAES,
+                "Self RSA" => RoomType.SELFRSA,
+                "Self RSA+DES" => RoomType.SELFRSA_DES,
+                "Self RSA+AES" => RoomType.SELFRSA_AES,
                 _ => RoomType.NoEncryption
             };
         }
@@ -55,6 +73,12 @@ namespace Server.Enums
                 RoomType.ARCFOUR => false,
                 RoomType.RSA => true,
                 RoomType.RSA_AES => true,
+                RoomType.SELFDES => false,
+                RoomType.SELFTRIPLEDES => false,
+                RoomType.SELFAES => true,
+                RoomType.SELFRSA => true,
+                RoomType.SELFRSA_DES => false,
+                RoomType.SELFRSA_AES => true,
                 _ => false
             };
         }
@@ -64,6 +88,9 @@ namespace Server.Enums
             {
                 RoomType.RSA => true,
                 RoomType.RSA_AES => true,
+                RoomType.SELFRSA => true,
+                RoomType.SELFRSA_DES => true,
+                RoomType.SELFRSA_AES => true,
                 _ => false
             };
         }
