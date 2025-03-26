@@ -9,7 +9,7 @@ using System.Text;
 
 namespace ClientMaui.Cryptography
 {
-    public class RSAInstance : ICryptography
+    public class RSAInstance : ICryptography, IAsymmetricCypherSetup
     {
         public string key
         {
@@ -155,6 +155,10 @@ namespace ClientMaui.Cryptography
                 key = Base64Encode(myNewPublicKey)
             };
             await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
+        }
+        public async Task Setup(Endpoint endpoint, Room room)
+        {
+            await SetupForRsa(endpoint, room, this);
         }
 
     }

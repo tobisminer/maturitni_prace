@@ -2,12 +2,17 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using ClientMaui.API;
 using ClientMaui.Cryptography.SelfImplemented;
 using ClientMaui.Cryptography.SelfImplemented.DES;
 using ClientMaui.Cryptography.SelfImplemented.RSA;
 
 namespace ClientMaui.Cryptography
 {
+    public interface IAsymmetricCypherSetup
+    {
+        Task Setup(Endpoint endpoint, Room room);
+    }
     public interface ICryptography
     {
 
@@ -34,6 +39,8 @@ namespace ClientMaui.Cryptography
                 "Self Triple DES" => new SelfTripleDesCryptography(),
                 "Self AES" => new SelfAesCryptography(),
                 "Self RSA" => new SelfRSACryptography(),
+                "Self RSA+DES" => new SelfRSAandSelfDES(),
+                "Self RSA+AES" => new SelfRSAandSelfAES(),
 
                 _ => new NoEncryption()
             };
@@ -50,6 +57,8 @@ namespace ClientMaui.Cryptography
                 "Self DES" => true,
                 "Self AES" => true,
                 "Self Triple DES" => true,
+                "Self RSA+DES" => true,
+                "Self RSA+AES" => true,
                 _ => false
             };
         }

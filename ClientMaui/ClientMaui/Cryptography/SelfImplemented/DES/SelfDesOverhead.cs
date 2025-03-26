@@ -83,7 +83,9 @@ class SelfDesCryptography : ICryptography
     public string key { get; set; }
     public string GenerateKey()
     {
-        return Convert.ToBase64String(Utils.GenerateTripleDesKey());
+        key = Convert.ToBase64String(Utils.GenerateTripleDesKey());
+
+        return key;
     }
     public Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
     {

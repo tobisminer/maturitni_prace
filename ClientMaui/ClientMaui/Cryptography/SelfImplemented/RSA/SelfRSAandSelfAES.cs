@@ -1,9 +1,15 @@
-﻿using ClientMaui.API;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+using ClientMaui.API;
 using ClientMaui.Entities.Room;
 
-namespace ClientMaui.Cryptography
+namespace ClientMaui.Cryptography.SelfImplemented.RSA
 {
-    internal class RSAandAES : ICryptography, IAsymmetricCypherSetup
+    internal class SelfRSAandSelfAES : ICryptography, IAsymmetricCypherSetup
     {
         public string key
         {
@@ -11,8 +17,8 @@ namespace ClientMaui.Cryptography
             set => RSA.key = value;
         } // This is the string public key
 
-        public RSAInstance RSA = new();
-        public AESInstance Aes = new();
+        public SelfRSACryptography RSA = new();
+        public SelfAesCryptography AES = new();
 
         private const string SPLITTER = "AESKEY@CYPHERTEXT";
 
@@ -26,15 +32,15 @@ namespace ClientMaui.Cryptography
 
         public string GenerateAesKey()
         {
-            Aes.key = Aes.GenerateKey();
-            return Aes.key;
+            AES.key = AES.GenerateKey();
+            return AES.key;
         }
 
         public async Task<string> Encrypt(string text, BlockCypherMode mode = BlockCypherMode.None)
         {
             GenerateAesKey();
-            var encryptedText = await Aes.Encrypt(text);
-            var encryptedKey = await RSA.Encrypt(Aes.key);
+            var encryptedText = await AES.Encrypt(text, mode);
+            var encryptedKey = await RSA.Encrypt(AES.key);
             return $"{encryptedKey}{SPLITTER}{encryptedText}";
         }
 
@@ -42,12 +48,12 @@ namespace ClientMaui.Cryptography
         {
             var split = text.Split(SPLITTER);
             var decryptedKey = await RSA.Decrypt(split[0], mode, isIncoming);
-            Aes.key = decryptedKey;
-            return await Aes.Decrypt(split[1]);
+            AES.key = decryptedKey;
+            return await AES.Decrypt(split[1]);
         }
         public async Task Setup(Endpoint endpoint, Room room)
         {
-            await RSAInstance.SetupForRsa(endpoint, room, RSA);
+            await SelfRSACryptography.SetupForRsa(endpoint, room, RSA);
         }
     }
 }

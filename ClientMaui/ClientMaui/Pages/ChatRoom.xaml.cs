@@ -9,6 +9,9 @@ using RestSharp;
 using SharpHook;
 using SharpHook.Native;
 using System.Net;
+using System.Security.Cryptography;
+
+using ClientMaui.Cryptography.SelfImplemented.RSA;
 
 namespace ClientMaui;
 public partial class ChatRoom : ContentPage
@@ -163,24 +166,19 @@ public partial class ChatRoom : ContentPage
 
         cypher = CryptographyHelper.GetCryptography(room.RoomType);
 
-        if (cypher.GetType() == typeof(RSAInstance))
+        var setups = new List<IAsymmetricCypherSetup>
         {
-            var rsaInstance = (RSAInstance)cypher;
-            await RSAInstance.SetupForRsa(endpoint, room, rsaInstance);
-            return;
-        }
-        if (cypher.GetType() == typeof(SelfRSACryptography))
-        {
-            var instance = (SelfRSACryptography)cypher;
-            await SelfRSACryptography.SetupForRsa(endpoint, room, instance);
-            return;
-        }
+            new RSAInstance(),
+            new SelfRSACryptography(),
+            new RSAandAES { RSA = new RSAInstance() },
+            new SelfRSAandSelfAES { RSA = new SelfRSACryptography()},
+            new SelfRSAandSelfDES { RSA = new SelfRSACryptography()},
 
-        if (cypher.GetType() == typeof(RSAandAES))
+        };
+
+        if (cypher is IAsymmetricCypherSetup setup)
         {
-            var instance = (RSAandAES)cypher;
-            var rsa = instance.RSA;
-            await RSAInstance.SetupForRsa(endpoint, room, rsa);
+            await setup.Setup(endpoint, room);
             return;
         }
 

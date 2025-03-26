@@ -205,7 +205,7 @@ namespace ClientMaui.Cryptography.SelfImplemented.RSA
         }
     }
 }
-class SelfRSACryptography : ICryptography
+class SelfRSACryptography : ICryptography, IAsymmetricCypherSetup
 {
     public string key
     {
@@ -331,5 +331,9 @@ class SelfRSACryptography : ICryptography
             key = Base64Encode(myNewPublicKey)
         };
         await endpoint.Request(APIEndpoints.RoomEndpoints.SetKey, body: JsonConvert.SerializeObject(myPublicKeyJson), method: Method.Post, id: room.id);
+    }
+    public async Task Setup(Endpoint endpoint, Room room)
+    {
+        await SetupForRsa(endpoint, room, this);
     }
 }
